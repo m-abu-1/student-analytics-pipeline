@@ -8,10 +8,11 @@ import io
 from datetime import datetime
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & HIGH-DENSITY SAAS DESIGN SYSTEM
+# 1. PAGE CONFIGURATION & GOOGLE/ZOHO SAAS DESIGN SYSTEM
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="BIT Academic Decision Intelligence Platform",
+    page_title="Academic Decision Intelligence Platform",
+    page_icon="https://img.icons8.com/color/96/000000/google-code.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -24,105 +25,120 @@ EMPTY_BANNER_HTML = """
 </div>
 """
 
-# Custom High-Density CSS Architecture (Datadog / Snowflake Executive Dark Slate Theme)
+# Custom High-Density CSS Architecture (Google Cloud & Zoho Analytics Theme)
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
     html, body, [class*="css"] { 
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+        background-color: #f8f9fa;
         -webkit-font-smoothing: antialiased;
     }
     
     /* Zero Whitespace Viewport Optimization */
     .block-container {
-        padding-top: 1.1rem !important;
-        padding-bottom: 1.2rem !important;
-        padding-left: 1.2rem !important;
-        padding-right: 1.2rem !important;
+        padding-top: 1.25rem !important;
+        padding-bottom: 1.5rem !important;
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
         max-width: 100% !important;
     }
     
-    [data-testid="stVerticalBlock"] { gap: 0.65rem !important; }
-
-    /* Sidebar Clean Styling */
-    [data-testid="stSidebar"] {
-        background-color: #0F172A !important;
-        border-right: 1px solid #1E293B !important;
-    }
-    [data-testid="stSidebar"] * {
-        color: #F8FAFC !important;
-    }
-    [data-testid="stSidebar"] .stRadio label p {
-        font-size: 13.5px !important;
-        font-weight: 600 !important;
-        color: #94A3B8 !important;
-    }
-    [data-testid="stSidebar"] .stRadio [data-checked="true"] p {
-        color: #38BDF8 !important;
-        font-weight: 700 !important;
-    }
+    [data-testid="stVerticalBlock"] { gap: 0.75rem !important; }
 
     /* Responsive SaaS Executive Header Banner */
-    .enterprise-navbar {
+    .workspace-navbar {
         width: 100%;
         box-sizing: border-box;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: #0F172A;
+        background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
         color: #FFFFFF;
         padding: 16px 24px;
         border-radius: 8px;
         margin-bottom: 14px;
-        border-left: 6px solid #4F46E5;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-left: 6px solid #1a73e8;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
-    .enterprise-navbar .brand-title { font-size: 18px; font-weight: 800; color: #F8FAFC; letter-spacing: -0.02em; }
-    .enterprise-navbar .brand-sub { font-size: 12.5px; color: #94A3B8; font-weight: 400; margin-left: 8px; }
-    .enterprise-navbar .status-tag {
-        background: #1E293B; border: 1px solid #334155; color: #38BDF8;
+    .workspace-navbar .brand-title { font-size: 18px; font-weight: 800; color: #F8FAFC; letter-spacing: -0.02em; }
+    .workspace-navbar .brand-sub { font-size: 12.5px; color: #94A3B8; font-weight: 400; margin-left: 8px; }
+    .workspace-navbar .status-tag {
+        background: rgba(26, 115, 232, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38BDF8;
         padding: 5px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase;
     }
 
-    /* Metric Tiles */
-    .kpi-tile {
-        background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px;
-        padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: all 0.2s;
+    /* Spacious Google Workspace Navigation Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px !important;
+        border-bottom: 2px solid #dadce0 !important;
+        background-color: #ffffff;
+        padding: 8px 14px 0px 14px !important;
+        border-radius: 8px 8px 0 0;
+        box-shadow: 0 1px 2px rgba(60,64,67,0.05);
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        padding: 12px 22px !important;
+        font-size: 13.5px !important;
+        font-weight: 600 !important;
+        color: #5f6368 !important;
+        border-radius: 6px 6px 0 0 !important;
+        background-color: transparent !important;
+        border: 1px solid transparent !important;
+        border-bottom: none !important;
+        white-space: nowrap !important;
+        transition: all 0.2s ease-in-out;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #1a73e8 !important;
+        background-color: #e8f0fe !important;
+        border-top: 3px solid #1a73e8 !important;
+        font-weight: 700 !important;
+        box-shadow: 0 -1px 3px rgba(60,64,67,0.08);
+    }
+
+    /* Metric & KPI Cards */
+    .zoho-card {
+        background: #FFFFFF; border: 1px solid #dadce0; border-radius: 8px;
+        padding: 14px 18px; box-shadow: 0 1px 3px rgba(60,64,67,0.06); transition: all 0.2s;
         box-sizing: border-box; width: 100%;
     }
-    .kpi-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); border-color: #CBD5E1; }
-    .kpi-title { font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; }
-    .kpi-value { font-size: 26px; font-weight: 800; color: #0F172A; margin-top: 2px; line-height: 1.1; }
+    .zoho-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(60,64,67,0.12); border-color: #1a73e8; }
+    .zoho-card-title { font-size: 11.5px; font-weight: 700; color: #5f6368; text-transform: uppercase; letter-spacing: 0.05em; }
+    .zoho-card-value { font-size: 26px; font-weight: 800; color: #202124; margin-top: 2px; line-height: 1.1; }
 
-    /* Badges & Executive Cards */
-    .badge { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; }
-    .badge-critical { background: #FFE4E6; color: #E11D48; }
-    .badge-warning { background: #FEF3C7; color: #D97706; }
-    .badge-academic { background: #E0F2FE; color: #0369A1; }
-    .badge-success { background: #D1FAE5; color: #059669; }
+    /* Custom Status Badges */
+    .status-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-critical { background: #fce8e6; color: #c5221f; border: 1px solid #f5c2c7; }
+    .badge-warning { background: #fef7e0; color: #b06000; border: 1px solid #fbe3b5; }
+    .badge-academic { background: #e8f0fe; color: #1a73e8; border: 1px solid #c2e7ff; }
+    .badge-success { background: #e6f4ea; color: #137333; border: 1px solid #c6edd5; }
 
     .insight-banner {
-        background-color: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #4F46E5;
-        padding: 14px 18px; border-radius: 6px; font-size: 13px; color: #334155; line-height: 1.6;
-        margin-top: 8px; margin-bottom: 8px;
+        background-color: #ffffff; border: 1px solid #dadce0; border-left: 5px solid #1a73e8;
+        padding: 14px 18px; border-radius: 6px; font-size: 13px; color: #3c4043; line-height: 1.6;
+        margin-top: 10px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(60,64,67,0.04);
     }
 
     .empty-banner {
-        background: #FFFFFF; border: 2px dashed #CBD5E1; border-radius: 8px;
-        padding: 40px; text-align: center; color: #64748B; margin: 20px 0;
+        background: #FFFFFF; border: 2px dashed #dadce0; border-radius: 8px;
+        padding: 40px; text-align: center; color: #5f6368; margin: 20px 0;
     }
-    .empty-banner-title { font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 4px; }
-    .empty-banner-sub { font-size: 13px; color: #94A3B8; }
+    .empty-banner-title { font-size: 16px; font-weight: 700; color: #202124; margin-bottom: 4px; }
+    .empty-banner-sub { font-size: 13px; color: #70757a; }
 
-    .section-lbl { font-size: 12px; font-weight: 800; color: #38BDF8; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 6px 0; }
-    .main-section-lbl { font-size: 13px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em; margin: 10px 0 6px 0; }
+    .section-lbl { font-size: 12.5px; font-weight: 800; color: #1a73e8; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px 0 6px 0; }
+    .main-section-lbl { font-size: 13px; font-weight: 800; color: #202124; text-transform: uppercase; letter-spacing: 0.04em; margin: 12px 0 8px 0; }
 </style>
 """, unsafe_allow_html=True)
 
-# Top Application Header
+# Top Header Banner
 st.markdown("""
-<div class="enterprise-navbar">
+<div class="workspace-navbar">
     <div>
         <span class="brand-title">ACADEMIC DECISION INTELLIGENCE PLATFORM</span>
         <span class="brand-sub"> &nbsp;|&nbsp; Bannari Amman Institute of Technology — Outcome Governance & Retention Analytics</span>
@@ -132,11 +148,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 PLOTLY_CONFIG = dict(
-    font=dict(family="Inter, sans-serif", color="#334155", size=12),
+    font=dict(family="Inter, sans-serif", color="#3c4043", size=12),
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF",
-    margin=dict(l=35, r=20, t=35, b=35),
-    xaxis=dict(showgrid=True, gridcolor="#F1F5F9", linecolor="#CBD5E1"),
-    yaxis=dict(showgrid=True, gridcolor="#F1F5F9", linecolor="#CBD5E1")
+    margin=dict(l=40, r=25, t=40, b=40),
+    xaxis=dict(showgrid=True, gridcolor="#f1f3f4", linecolor="#dadce0"),
+    yaxis=dict(showgrid=True, gridcolor="#f1f3f4", linecolor="#dadce0")
 )
 
 # ---------------------------------------------------------
@@ -164,24 +180,11 @@ def normalize_columns(df):
     return df.rename(columns=renamed)
 
 # ---------------------------------------------------------
-# 3. SIDEBAR NAVIGATION & POLICY CONTROLS
+# 3. SIDEBAR INSTITUTIONAL POLICY CONTROLS
 # ---------------------------------------------------------
 with st.sidebar:
-    st.markdown("<div class='section-lbl'>Workspace Navigation</div>", unsafe_allow_html=True)
-    active_workspace = st.radio(
-        "Select Active Workspace Module:",
-        [
-            "1. Executive Control & Sensitivity",
-            "2. Course Outcomes & OBE Attainment",
-            "3. Student 360 Directory & Scorecards",
-            "4. 2D Early Warning Risk Matrix",
-            "5. Embedded AI Academic Assistant"
-        ],
-        label_visibility="collapsed"
-    )
-    
-    st.markdown("---")
-    st.markdown("<div class='section-lbl'>Institutional Policy Cutoffs</div>", unsafe_allow_html=True)
+    st.image("https://img.icons8.com/color/96/000000/google-code.png", width=48)
+    st.markdown("<div class='section-lbl'>Institutional Governance Policy</div>", unsafe_allow_html=True)
     
     att_threshold = st.slider(
         "Attendance Cutoff (%)", 50.0, 90.0, 75.0, 1.0,
@@ -325,7 +328,7 @@ def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
     return clean_df, audit_df, subject_summary, student_matrix, None
 
 # ---------------------------------------------------------
-# 5. INGESTION CONSOLE (TOP SECTION)
+# 5. INGESTION CONSOLE
 # ---------------------------------------------------------
 st.markdown("<div class='main-section-lbl'>1. Data Ingestion & Sanitation Audit Console</div>", unsafe_allow_html=True)
 
@@ -388,12 +391,22 @@ if uploaded_file is not None:
             st.dataframe(audit_df, use_container_width=True)
 
 # ---------------------------------------------------------
-# 6. WORKSPACE CONTENT ROUTING
+# 6. GOOGLE/ZOHO WORKSPACE NAVIGATION TABS
 # ---------------------------------------------------------
-st.markdown("<div class='main-section-lbl'>2. Academic Decision Intelligence Workspace</div>", unsafe_allow_html=True)
+st.markdown("<div class='main-section-lbl'>2. Academic Decision Intelligence Hub</div>", unsafe_allow_html=True)
 
-# WORKSPACE 1: EXECUTIVE CONTROL & SENSITIVITY ANALYSIS
-if active_workspace == "1. Executive Control & Sensitivity":
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "Executive Control & Sensitivity",
+    "Course Outcomes & OBE Attainment",
+    "Student 360 Directory & Scorecards",
+    "2D Early Warning Risk Matrix",
+    "Embedded AI Academic Assistant"
+])
+
+# ---------------------------------------------------------
+# TAB 1: EXECUTIVE CONTROL & SENSITIVITY
+# ---------------------------------------------------------
+with tab1:
     if clean_df is not None and not clean_df.empty:
         batch_avg_mark = clean_df['normalized_mark_pct'].mean()
         batch_avg_att = clean_df['attendance_percentage'].mean()
@@ -451,8 +464,10 @@ if active_workspace == "1. Executive Control & Sensitivity":
     else:
         st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
-# WORKSPACE 2: COURSE OUTCOMES & OBE ATTAINMENT
-elif active_workspace == "2. Course Outcomes & OBE Attainment":
+# ---------------------------------------------------------
+# TAB 2: COURSE OUTCOMES & OBE ATTAINMENT
+# ---------------------------------------------------------
+with tab2:
     if clean_df is not None and not clean_df.empty:
         st.markdown("##### Subject Difficulty Index (SDI) & NBA/NAAC Course Outcome (CO) Attainment")
         
@@ -498,8 +513,10 @@ elif active_workspace == "2. Course Outcomes & OBE Attainment":
     else:
         st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
-# WORKSPACE 3: STUDENT 360 DIRECTORY & SCORECARDS
-elif active_workspace == "3. Student 360 Directory & Scorecards":
+# ---------------------------------------------------------
+# TAB 3: STUDENT 360 DIRECTORY & SCORECARDS
+# ---------------------------------------------------------
+with tab3:
     if clean_df is not None and not clean_df.empty:
         total_students = len(student_matrix)
         q1_students = (student_matrix['Risk Quadrant'] == "CRITICAL RISK (Q1)").sum()
@@ -538,7 +555,7 @@ elif active_workspace == "3. Student 360 Directory & Scorecards":
                 
                 with st.expander(f"ID: {stu['student_id']} | {stu['student_name']} — Score: {stu['overall_mean_pct']:.1f}% | SGPA: {stu['est_sgpa']:.1f}"):
                     st.markdown(f"""
-                    **Department:** `{stu['department']}` | **Risk Status:** <span class="badge {badge_class}">{stu['Risk Quadrant']}</span>  
+                    **Department:** `{stu['department']}` | **Risk Status:** <span class="status-badge {badge_class}">{stu['Risk Quadrant']}</span>  
                     **Academic Health Index (AHI):** `{stu['Academic Health Index (AHI)']} / 100`  
                     **Average Relative Z-Score:** `{stu['avg_z_score']:+.2f}σ`
                     """, unsafe_allow_html=True)
@@ -549,7 +566,7 @@ elif active_workspace == "3. Student 360 Directory & Scorecards":
                     fig_radar.add_trace(go.Scatterpolar(
                         r=st_records['normalized_mark_pct'].tolist() + [st_records['normalized_mark_pct'].iloc[0]],
                         theta=st_records['subject_id'].tolist() + [st_records['subject_id'].iloc[0]],
-                        fill='toself', name='Student Score', line_color='#4F46E5'
+                        fill='toself', name='Student Score', line_color='#1a73e8'
                     ))
                     fig_radar.add_trace(go.Scatterpolar(
                         r=st_records['subject_mean'].tolist() + [st_records['subject_mean'].iloc[0]],
@@ -562,8 +579,10 @@ elif active_workspace == "3. Student 360 Directory & Scorecards":
     else:
         st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
-# WORKSPACE 4: 2D EARLY WARNING RISK MATRIX
-elif active_workspace == "4. 2D Early Warning Risk Matrix":
+# ---------------------------------------------------------
+# TAB 4: 2D EARLY WARNING RISK MATRIX
+# ---------------------------------------------------------
+with tab4:
     if clean_df is not None and not clean_df.empty:
         def get_action(quadrant):
             if quadrant == "CRITICAL RISK (Q1)": return "Schedule Mandatory Faculty Counseling & Notify Parents"
@@ -578,7 +597,7 @@ elif active_workspace == "4. 2D Early Warning Risk Matrix":
             hover_data=["student_id", "student_name", "overall_mean_pct", "Academic Health Index (AHI)"],
             title="2D Cartesian Early Warning Risk Matrix (Attendance vs. Z-Score Deviation)",
             labels={"mean_attendance": "Mean Attendance (%)", "avg_z_score": "Average Z-Score (σ)"},
-            color_discrete_map={"CRITICAL RISK (Q1)": "#E11D48", "ATTENDANCE RISK (Q2)": "#D97706", "ACADEMIC RISK (Q3)": "#0284C7", "HIGH PERFORMER (Q4)": "#059669"},
+            color_discrete_map={"CRITICAL RISK (Q1)": "#c5221f", "ATTENDANCE RISK (Q2)": "#b06000", "ACADEMIC RISK (Q3)": "#1a73e8", "HIGH PERFORMER (Q4)": "#137333"},
             height=400
         )
         fig_quad.add_vline(x=att_threshold, line_dash="dash", line_color="gray", annotation_text=f"Attendance Cutoff ({att_threshold}%)")
@@ -610,8 +629,10 @@ elif active_workspace == "4. 2D Early Warning Risk Matrix":
     else:
         st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
-# WORKSPACE 5: LOCAL AI ACADEMIC ASSISTANT
-elif active_workspace == "5. Embedded AI Academic Assistant":
+# ---------------------------------------------------------
+# TAB 5: LOCAL AI ACADEMIC ASSISTANT
+# ---------------------------------------------------------
+with tab5:
     if clean_df is not None and not clean_df.empty:
         st.markdown("##### AI Academic Query Assistant")
         st.caption("Ask questions about student attendance, risk levels, subject difficulty, or top performers in plain English.")
