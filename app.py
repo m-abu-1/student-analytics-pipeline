@@ -4,223 +4,230 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import io
-from datetime import datetime
 
 # ---------------------------------------------------------
-# 1. ENTERPRISE CONFIGURATION & CSS INJECTION
+# 1. ENTERPRISE CONFIGURATION & UI SETUP
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="ADI | Academic Decision Intelligence",
-    page_icon="🧬",
+    page_title="Academic Analytics Pipeline",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Advanced viewport optimization: Eliminates all wasted whitespace and standardizes typography
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-    
-    /* Zero-wasted-space container padding */
-    .block-container { padding: 1.5rem 2rem 2rem 2rem !important; max-width: 100% !important; }
-    
-    /* Enterprise Header */
-    .enterprise-header {
-        display: flex; justify-content: space-between; align-items: center;
-        background: #0F172A; padding: 16px 24px; border-radius: 8px; margin-bottom: 24px;
-        border-left: 4px solid #4F46E5; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .brand-title { color: #F8FAFC; font-size: 18px; font-weight: 800; letter-spacing: -0.02em; }
-    .brand-sub { color: #94A3B8; font-size: 13px; font-weight: 500; margin-left: 12px; }
-    .status-badge {
-        background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); 
-        color: #34D399; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
-    }
-
-    /* KPI Tiles */
-    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-    .kpi-tile {
-        background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.02); transition: all 0.2s ease;
-    }
-    .kpi-tile:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-color: #CBD5E1; }
-    .kpi-title { font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-    .kpi-value { font-size: 28px; font-weight: 800; color: #0F172A; line-height: 1.2; }
-    
-    /* Tab Overrides */
-    .stTabs [data-baseweb="tab-list"] { gap: 8px !important; border-bottom: 2px solid #E2E8F0 !important; background: transparent; }
-    .stTabs [data-baseweb="tab"] { padding: 12px 20px !important; font-size: 14px !important; font-weight: 600 !important; color: #64748B !important; border: none !important; }
-    .stTabs [aria-selected="true"] { color: #4F46E5 !important; border-bottom: 3px solid #4F46E5 !important; background: #F8FAFC !important; border-radius: 6px 6px 0 0; }
+    .kpi-card { background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 5px solid #004085; margin-bottom: 20px; }
+    .kpi-title { font-size: 14px; color: #6c757d; font-weight: bold; text-transform: uppercase; }
+    .kpi-value { font-size: 28px; font-weight: bold; color: #212529; }
+    .risk-critical { border-left-color: #dc3545; }
+    .risk-warning { border-left-color: #ffc107; }
 </style>
 """, unsafe_allow_html=True)
 
-PLOTLY_CONFIG = dict(font=dict(family="Inter", color="#334155"), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF", margin=dict(l=20, r=20, t=40, b=20))
+st.title("Academic Performance & Attendance Analytics")
+st.markdown("### End-to-End Pipeline: Ingestion → Validation → Statistical Analysis → Risk Flagging")
 
 # ---------------------------------------------------------
-# 2. CORE COMPUTATION ENGINE (CACHED)
-# ---------------------------------------------------------
-@st.cache_data(show_spinner=False)
-def process_data(df, att_thresh, z_thresh):
-    """Vectorized data processing pipeline for optimal execution speed."""
-    # Enforce schema constraints safely
-    req_cols = {'student_id', 'subject_id', 'attendance_percentage', 'marks_obtained'}
-    missing = req_cols - set(df.columns)
-    if missing: return None, None, None, list(missing)
-
-    df['maximum_marks'] = df.get('maximum_marks', 100.0)
-    df['student_name'] = df.get('student_name', df['student_id'])
-    
-    # Isolate valid records vs anomalies
-    valid_mask = (df['attendance_percentage'].between(0, 100)) & (df['marks_obtained'].between(0, df['maximum_marks']))
-    df_clean = df[valid_mask].copy()
-    df_audit = df[~valid_mask].copy()
-    
-    if df_clean.empty: return df_clean, df_audit, None, None
-
-    # Normalization
-    df_clean['pct_score'] = (df_clean['marks_obtained'] / df_clean['maximum_marks']) * 100.0
-
-    # Subject Aggregation (OBE & SDI)
-    sub_stats = df_clean.groupby('subject_id').agg(
-        mean_score=('pct_score', 'mean'), std_score=('pct_score', 'std'),
-        student_count=('student_id', 'nunique'), pass_count=('pct_score', lambda x: (x >= 50).sum())
-    ).reset_index()
-    
-    sub_stats['std_score'] = sub_stats['std_score'].fillna(0.0)
-    sub_stats['SDI'] = 100.0 - sub_stats['mean_score']
-    sub_stats['Pass_Rate'] = (sub_stats['pass_count'] / sub_stats['student_count']) * 100.0
-    sub_stats['OBE_Level'] = pd.cut(sub_stats['Pass_Rate'], bins=[-1, 49.9, 59.9, 69.9, 100], labels=["L0: Unattained", "L1: Low", "L2: Moderate", "L3: High"])
-
-    # Z-Score Vectorization
-    df_clean = df_clean.merge(sub_stats[['subject_id', 'mean_score', 'std_score']], on='subject_id')
-    df_clean['z_score'] = np.where(df_clean['std_score'] > 0, (df_clean['pct_score'] - df_clean['mean_score']) / df_clean['std_score'], 0.0)
-
-    # Student Matrix Aggregation
-    stu_mat = df_clean.groupby(['student_id', 'student_name']).agg(
-        att_mean=('attendance_percentage', 'mean'), score_mean=('pct_score', 'mean'), z_mean=('z_score', 'mean')
-    ).reset_index()
-    
-    # 2D Risk Quadrant Logic
-    conditions = [
-        (stu_mat['att_mean'] < att_thresh) & (stu_mat['z_mean'] < z_thresh),
-        (stu_mat['att_mean'] < att_thresh),
-        (stu_mat['z_mean'] < z_thresh)
-    ]
-    choices = ["Q1: CRITICAL RISK", "Q2: ATTENDANCE RISK", "Q3: ACADEMIC RISK"]
-    stu_mat['Risk_Quadrant'] = np.select(conditions, choices, default="Q4: HIGH PERFORMER")
-    stu_mat['AHI'] = (stu_mat['score_mean'] * 0.6) + (stu_mat['att_mean'] * 0.4)
-
-    return df_clean, df_audit, sub_stats, stu_mat
-
-# ---------------------------------------------------------
-# 3. SIDEBAR CONTROLS
+# 2. DEFINING THE PIPELINE PARAMETERS
 # ---------------------------------------------------------
 with st.sidebar:
-    st.image("https://img.icons8.com/color/96/000000/artificial-intelligence.png", width=50)
-    st.markdown("### Institutional Policies")
-    att_threshold = st.slider("Min. Attendance (%)", 50.0, 90.0, 75.0, 1.0, help="University mandated minimum attendance.")
-    z_risk_threshold = st.slider("Academic Risk (\u03c3)", -2.0, 0.0, -0.5, 0.1, help="Standard deviations below class average to trigger warning.")
-    tuition = st.number_input("Annual Tuition (\u20b9)", value=125000, step=10000)
+    st.header("Institutional Thresholds")
+    ATTENDANCE_CUTOFF = st.slider("Attendance Minimum (%)", 50, 90, 75, help="Threshold for Attendance Risk")
     st.markdown("---")
-    st.caption("Engine: Streamlit + Pandas + Plotly\n\nBuild: 4.2.0-Prod")
+    st.markdown("**Risk Definitions:**")
+    st.markdown("- **Attendance Risk:** $< 75\%$")
+    st.markdown("- **Academic Risk:** Marks $<$ Subject Average")
+    st.markdown("- **Critical Risk:** Meets both conditions above.")
 
 # ---------------------------------------------------------
-# 4. APPLICATION UI ROUTING
+# 3. DATA INGESTION & VALIDATION MODULE (STAGE 1 & 2)
 # ---------------------------------------------------------
-st.markdown("""
-<div class="enterprise-header">
-    <div>
-        <span class="brand-title">ACADEMIC DECISION INTELLIGENCE PLATFORM</span>
-        <span class="brand-sub">Real-time NBA/NAAC Outcomes & Early Warning System</span>
-    </div>
-    <div class="status-badge">SYSTEM OPTIMIZED</div>
-</div>
-""", unsafe_allow_html=True)
-
-# File Ingestion
-col1, col2 = st.columns([3, 1])
-uploaded_file = col1.file_uploader("Mount Academic Batch Dataset (.csv)", type=["csv"], label_visibility="collapsed")
-
-if not uploaded_file:
-    st.info("Awaiting Data Pipeline Connection. Please upload a CSV containing: `student_id`, `student_name`, `subject_id`, `attendance_percentage`, `marks_obtained`.")
-    st.stop()
-
-# Execution
-df_raw = pd.read_csv(uploaded_file)
-df_clean, df_audit, sub_stats, stu_mat = process_data(df_raw, att_threshold, z_risk_threshold)
-
-if type(df_clean) == list: # Checks if returns missing cols
-    st.error(f"Schema Violation. Missing mandatory columns: {df_clean}")
-    st.stop()
-
-# Global KPI Ribbon
-health_score = (len(df_clean) / len(df_raw)) * 100
-st.markdown(f"""
-<div class="kpi-grid">
-    <div class="kpi-tile"><div class="kpi-title">Records Analyzed</div><div class="kpi-value">{len(df_clean)}</div></div>
-    <div class="kpi-tile"><div class="kpi-title">Data Anomalies</div><div class="kpi-value" style="color:#E11D48;">{len(df_audit)}</div></div>
-    <div class="kpi-tile"><div class="kpi-title">Cohort Health Index</div><div class="kpi-value">{stu_mat['AHI'].mean():.1f}</div></div>
-    <div class="kpi-tile"><div class="kpi-title">System Health</div><div class="kpi-value" style="color:{'#059669' if health_score > 90 else '#D97706'};">{health_score:.1f}%</div></div>
-</div>
-""", unsafe_allow_html=True)
-
-# Analytics Modules
-t1, t2, t3, t4 = st.tabs(["Aggregate Intelligence", "Subject & OBE Analytics", "Student Micro-Profiler", "Financial Risk Matrix"])
-
-with t1:
-    c1, c2 = st.columns([2, 1])
-    with c1:
-        # Vectorized OLS calculation
-        x, y = df_clean['attendance_percentage'], df_clean['pct_score']
-        m, b = np.polyfit(x, y, 1) if len(x) > 1 else (0,0)
-        r_val = x.corr(y)
+@st.cache_data
+def ingest_and_validate_data(file):
+    if file.name.endswith('.csv'):
+        df = pd.read_csv(file)
+    else:
+        df = pd.read_excel(file)
         
-        fig = px.scatter(df_clean, x="attendance_percentage", y="pct_score", color="subject_id", hover_data=["student_name"], title=f"Attendance vs Performance Mapping (Pearson r: {r_val:.2f})", height=400)
-        fig.add_trace(go.Scatter(x=[x.min(), x.max()], y=[m*x.min()+b, m*x.max()+b], mode='lines', name='Linear Trend', line=dict(color='black', dash='dash')))
-        fig.update_layout(**PLOTLY_CONFIG)
-        st.plotly_chart(fig, use_container_width=True)
-    with c2:
-        fig_pie = px.pie(stu_mat, names='Risk_Quadrant', hole=0.5, title="Cohort Risk Distribution", color='Risk_Quadrant', 
-                         color_discrete_map={"Q1: CRITICAL RISK": "#E11D48", "Q2: ATTENDANCE RISK": "#D97706", "Q3: ACADEMIC RISK": "#0284C7", "Q4: HIGH PERFORMER": "#059669"})
-        fig_pie.update_layout(**PLOTLY_CONFIG, showlegend=False)
-        st.plotly_chart(fig_pie, use_container_width=True)
-
-with t2:
-    st.dataframe(sub_stats, column_config={
-        "subject_id": "Subject Code",
-        "mean_score": st.column_config.NumberColumn("Average Score", format="%.1f%%"),
-        "SDI": st.column_config.ProgressColumn("Difficulty Index (SDI)", min_value=0, max_value=100),
-        "Pass_Rate": st.column_config.NumberColumn("Pass Rate", format="%.1f%%"),
-        "OBE_Level": "NBA OBE Attainment"
-    }, hide_index=True, use_container_width=True)
-
-with t3:
-    sel_stu = st.selectbox("Search Student Registry", options=stu_mat['student_id'] + " - " + stu_mat['student_name'])
-    sid = sel_stu.split(" - ")[0]
-    stu_recs = df_clean[df_clean['student_id'] == sid]
+    # Schema check based on project requirements
+    required_cols = ['student_id', 'name', 'subject_id', 'attendance_percentage', 'marks_obtained', 'maximum_marks']
+    if not all(col in df.columns for col in required_cols):
+        return None, None, f"Missing required columns. Expected: {required_cols}"
     
-    rc1, rc2 = st.columns([1, 1])
-    with rc1:
-        fig_radar = go.Figure()
-        fig_radar.add_trace(go.Scatterpolar(r=stu_recs['pct_score'].tolist() + [stu_recs['pct_score'].iloc[0]], theta=stu_recs['subject_id'].tolist() + [stu_recs['subject_id'].iloc[0]], fill='toself', name='Student Score'))
-        fig_radar.add_trace(go.Scatterpolar(r=stu_recs['mean_score'].tolist() + [stu_recs['mean_score'].iloc[0]], theta=stu_recs['subject_id'].tolist() + [stu_recs['subject_id'].iloc[0]], fill='toself', name='Class Average'))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), margin=dict(t=40, b=20), height=350, paper_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_radar, use_container_width=True)
-    with rc2:
-        st.dataframe(stu_recs[['subject_id', 'attendance_percentage', 'pct_score', 'z_score']], column_config={
-            "attendance_percentage": st.column_config.ProgressColumn("Attendance", min_value=0, max_value=100, format="%.1f%%"),
-            "z_score": st.column_config.NumberColumn("Z-Score", format="%+.2f σ")
-        }, hide_index=True, use_container_width=True)
-
-with t4:
-    q1_count = (stu_mat['Risk_Quadrant'] == 'Q1: CRITICAL RISK').sum()
-    st.error(f"🚨 **Financial & Retention Alert:** {q1_count} students in Critical Risk quadrant. Estimated \u20b9{(q1_count * tuition):,.0f} tuition revenue at risk.")
+    # Validation Rules
+    initial_count = len(df)
     
-    fig_quad = px.scatter(stu_mat, x="att_mean", y="z_mean", color="Risk_Quadrant", hover_data=["student_name"],
-                          title="2D Action Matrix (Attendance vs Z-Score)", height=400,
-                          color_discrete_map={"Q1: CRITICAL RISK": "#E11D48", "Q2: ATTENDANCE RISK": "#D97706", "Q3: ACADEMIC RISK": "#0284C7", "Q4: HIGH PERFORMER": "#059669"})
-    fig_quad.add_vline(x=att_threshold, line_dash="dash", line_color="#0F172A", annotation_text="Att Cutoff")
-    fig_quad.add_hline(y=z_risk_threshold, line_dash="dash", line_color="#0F172A", annotation_text="Z Cutoff")
-    fig_quad.update_layout(**PLOTLY_CONFIG)
-    st.plotly_chart(fig_quad, use_container_width=True)
+    # 1. Drop complete duplicates
+    df = df.drop_duplicates()
+    
+    # 2. Flag missing values
+    audit_missing = df[df.isnull().any(axis=1)].copy()
+    audit_missing['anomaly_type'] = "Missing Values"
+    df = df.dropna()
+    
+    # 3. Validate boundaries (0-100% attendance, marks <= maximum)
+    audit_bounds = df[
+        (df['attendance_percentage'] < 0) | 
+        (df['attendance_percentage'] > 100) | 
+        (df['marks_obtained'] < 0) | 
+        (df['marks_obtained'] > df['maximum_marks'])
+    ].copy()
+    audit_bounds['anomaly_type'] = "Boundary Violation"
+    
+    # Keep only valid records for analysis
+    df_clean = df[
+        (df['attendance_percentage'] >= 0) & 
+        (df['attendance_percentage'] <= 100) & 
+        (df['marks_obtained'] >= 0) & 
+        (df['marks_obtained'] <= df['maximum_marks'])
+    ].copy()
+    
+    audit_log = pd.concat([audit_missing, audit_bounds], ignore_index=True)
+    
+    return df_clean, audit_log, None
+
+# ---------------------------------------------------------
+# 4. STATISTICAL ANALYSIS & NORMALIZATION MODULE (STAGE 3 & 4)
+# ---------------------------------------------------------
+@st.cache_data
+def execute_statistical_pipeline(df):
+    # Calculate Base Percentage
+    df['mark_percentage'] = (df['marks_obtained'] / df['maximum_marks']) * 100
+    
+    # Subject-Wise Descriptive Statistics & Baselines
+    subject_stats = df.groupby('subject_id')['mark_percentage'].agg(['mean', 'median', 'std']).reset_index()
+    subject_stats = subject_stats.rename(columns={'mean': 'subject_mean', 'median': 'subject_median', 'std': 'subject_std'})
+    
+    # Handle zero standard deviation to prevent division by zero in Z-score
+    subject_stats['subject_std'] = subject_stats['subject_std'].replace(0, 1)
+    
+    # Merge baselines back to main dataset
+    df = df.merge(subject_stats, on='subject_id')
+    
+    # Calculate Subject Normalization (Z-Score)
+    df['z_score'] = (df['mark_percentage'] - df['subject_mean']) / df['subject_std']
+    
+    return df, subject_stats
+
+# ---------------------------------------------------------
+# 5. RISK IDENTIFICATION ENGINE (STAGE 5)
+# ---------------------------------------------------------
+@st.cache_data
+def identify_risks(df, att_cutoff):
+    # Rule 1: Attendance Risk
+    df['attendance_risk'] = df['attendance_percentage'] < att_cutoff
+    
+    # Rule 2: Academic Risk (Below subject mean)
+    df['academic_risk'] = df['mark_percentage'] < df['subject_mean']
+    
+    # Rule 3: Critical At-Risk (Both conditions met)
+    df['critical_risk'] = df['attendance_risk'] & df['academic_risk']
+    
+    # Categorize for UI
+    def get_risk_label(row):
+        if row['critical_risk']: return "Critical Risk"
+        if row['attendance_risk']: return "Attendance Risk"
+        if row['academic_risk']: return "Academic Risk"
+        return "On Track"
+        
+    df['risk_category'] = df.apply(get_risk_label, axis=1)
+    return df
+
+# ---------------------------------------------------------
+# UI ROUTING & EXECUTION
+# ---------------------------------------------------------
+uploaded_file = st.file_uploader("Ingest Raw Academic Data (CSV/Excel)", type=["csv", "xlsx", "xls"])
+
+if uploaded_file is not None:
+    # Execute Pipeline
+    df_clean, df_audit, error = ingest_and_validate_data(uploaded_file)
+    
+    if error:
+        st.error(error)
+        st.stop()
+        
+    df_analyzed, subject_stats = execute_statistical_pipeline(df_clean)
+    df_final = identify_risks(df_analyzed, ATTENDANCE_CUTOFF)
+    
+    # Top Level KPIs
+    c1, c2, c3, c4 = st.columns(4)
+    c1.markdown(f'<div class="kpi-card"><div class="kpi-title">Valid Records</div><div class="kpi-value">{len(df_final)}</div></div>', unsafe_allow_html=True)
+    c2.markdown(f'<div class="kpi-card risk-warning"><div class="kpi-title">Anomalies Rejected</div><div class="kpi-value">{len(df_audit)}</div></div>', unsafe_allow_html=True)
+    
+    critical_count = df_final['critical_risk'].sum()
+    c3.markdown(f'<div class="kpi-card risk-critical"><div class="kpi-title">Critical At-Risk</div><div class="kpi-value">{critical_count}</div></div>', unsafe_allow_html=True)
+    
+    overall_corr = df_final['attendance_percentage'].corr(df_final['mark_percentage'])
+    c4.markdown(f'<div class="kpi-card"><div class="kpi-title">Global Pearson (r)</div><div class="kpi-value">{overall_corr:.2f}</div></div>', unsafe_allow_html=True)
+    
+    # Tabbed Interface
+    tab1, tab2, tab3, tab4 = st.tabs(["Data Audit & Cleaning", "Statistical Trends & Regression", "Subject Normalization (Z-Score)", "Automated Risk Dashboard"])
+    
+    with tab1:
+        st.subheader("Data Validation Log")
+        if not df_audit.empty:
+            st.warning(f"Identified {len(df_audit)} records violating schema boundaries or containing missing values. These were excluded from statistical calculations.")
+            st.dataframe(df_audit, use_container_width=True)
+        else:
+            st.success("No anomalies detected during ingestion.")
+            
+    with tab2:
+        st.subheader("Attendance vs Performance Regression Analysis")
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            # NumPy Polyfit Regression implementation
+            x = df_final['attendance_percentage']
+            y = df_final['mark_percentage']
+            
+            fig = px.scatter(df_final, x="attendance_percentage", y="mark_percentage", color="subject_id", 
+                             hover_data=['student_id', 'name'], opacity=0.7,
+                             title="Linear Association Analysis")
+                             
+            if len(x) > 1:
+                # Calculate simple linear regression using NumPy
+                slope, intercept = np.polyfit(x, y, 1)
+                line_x = np.array([x.min(), x.max()])
+                line_y = slope * line_x + intercept
+                fig.add_trace(go.Scatter(x=line_x, y=line_y, mode='lines', name='Regression Line', line=dict(color='black', dash='dash')))
+                
+            fig.update_layout(xaxis_title="Attendance (%)", yaxis_title="Marks (%)")
+            st.plotly_chart(fig, use_container_width=True)
+            
+        with col2:
+            st.markdown("### Statistical Insight")
+            st.markdown(f"**Pearson Correlation ($r$):** `{overall_corr:.3f}`")
+            st.markdown("""
+            A strong positive correlation indicates a statistical relationship where higher attendance is associated with higher academic performance. 
+            *Note: This regression studies association only and is not implemented to claim absolute prediction of student success.*
+            """)
+            
+    with tab3:
+        st.subheader("Subject-Wise Comparison & Standardization")
+        st.markdown("Raw marks are normalized using the formula: $Z = \\frac{\\text{Mark \\%} - \\text{Subject Mean}}{\\text{Subject Std. Dev.}}$")
+        
+        st.dataframe(subject_stats.style.format({'subject_mean': '{:.1f}%', 'subject_median': '{:.1f}%', 'subject_std': '{:.2f}'}), use_container_width=True)
+        
+        fig_box = px.box(df_final, x="subject_id", y="z_score", color="subject_id", title="Z-Score Distribution across Subjects")
+        fig_box.add_hline(y=0, line_dash="dot", annotation_text="Subject Mean")
+        st.plotly_chart(fig_box, use_container_width=True)
+        
+    with tab4:
+        st.subheader("Automated Cohort Flagging")
+        
+        risk_summary = df_final['risk_category'].value_counts().reset_index()
+        risk_summary.columns = ['Risk Category', 'Student Count']
+        
+        col_a, col_b = st.columns([1, 2])
+        with col_a:
+            fig_pie = px.pie(risk_summary, names='Risk Category', values='Student Count', 
+                             color='Risk Category',
+                             color_discrete_map={"Critical Risk": "#dc3545", "Attendance Risk": "#fd7e14", "Academic Risk": "#ffc107", "On Track": "#28a745"},
+                             hole=0.4)
+            st.plotly_chart(fig_pie, use_container_width=True)
+            
+        with col_b:
+            st.markdown("### Actionable Roster (At-Risk Students)")
+            at_risk_df = df_final[df_final['risk_category'] != "On Track"]
+            st.dataframe(at_risk_df[['student_id', 'name', 'subject_id', 'attendance_percentage', 'mark_percentage', 'risk_category']].sort_values('risk_category'), use_container_width=True)
+else:
+    st.info("Awaiting Data Ingestion. Please upload a CSV or Excel file containing attendance and performance records to initialize the pipeline.")
