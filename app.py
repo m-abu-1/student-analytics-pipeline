@@ -17,7 +17,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom High-Density CSS Architecture (Datadog / Snowflake Dark Slate Theme)
+# Global Empty State Placeholder HTML (Defined early to prevent NameError)
+EMPTY_BANNER_HTML = """
+<div class="empty-banner">
+    <div class="empty-banner-title">Awaiting Academic Data Stream Ingestion</div>
+    <div class="empty-banner-sub">Please upload an academic batch dataset (.csv or .xlsx) in the console above to calculate statistical models, sensitivity charts, and risk matrices.</div>
+</div>
+"""
+
+# Custom High-Density CSS Architecture
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -60,7 +68,38 @@ st.markdown("""
         padding: 5px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase;
     }
 
-    /* KPI Grid Cards */
+    /* Spacious & Uncongested Main Workspace Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 14px !important;
+        border-bottom: 2px solid #E2E8F0 !important;
+        background-color: #F8FAFC;
+        padding: 8px 16px 0px 16px !important;
+        border-radius: 8px 8px 0 0;
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        padding: 12px 22px !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: #64748B !important;
+        border-radius: 6px 6px 0 0 !important;
+        background-color: transparent !important;
+        border: 1px solid transparent !important;
+        border-bottom: none !important;
+        white-space: nowrap !important;
+        transition: all 0.2s ease-in-out;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #4F46E5 !important;
+        background-color: #FFFFFF !important;
+        border-color: #E2E8F0 !important;
+        border-top: 3px solid #4F46E5 !important;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.04);
+    }
+
+    /* KPI Cards */
     .kpi-tile {
         background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px;
         padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: all 0.2s;
@@ -69,8 +108,6 @@ st.markdown("""
     .kpi-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); border-color: #CBD5E1; }
     .kpi-title { font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; }
     .kpi-value { font-size: 26px; font-weight: 800; color: #0F172A; margin-top: 2px; line-height: 1.1; }
-    .kpi-meta { font-size: 11px; font-weight: 600; margin-top: 4px; }
-    .sub-good { color: #059669; } .sub-bad { color: #E11D48; } .sub-info { color: #0284C7; }
 
     /* Custom Badges & SaaS Cards */
     .badge { display: inline-block; padding: 3px 9px; border-radius: 4px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; }
@@ -92,34 +129,11 @@ st.markdown("""
     .empty-banner-title { font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 4px; }
     .empty-banner-sub { font-size: 13px; color: #94A3B8; }
 
-    /* Enhanced Streamlit Main Workspace Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px !important;
-        border-bottom: 2px solid #E2E8F0 !important;
-        background-color: #F8FAFC;
-        padding: 6px 10px 0px 10px;
-        border-radius: 8px 8px 0 0;
-    }
-    .stTabs [data-baseweb="tab"] {
-        padding: 10px 20px !important;
-        font-size: 13.5px !important;
-        font-weight: 700 !important;
-        color: #64748B !important;
-        border-radius: 6px 6px 0 0 !important;
-        transition: all 0.2s;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #4F46E5 !important;
-        background-color: #FFFFFF !important;
-        border-top: 3px solid #4F46E5 !important;
-        box-shadow: 0 -2px 4px rgba(0,0,0,0.03);
-    }
-
     .section-lbl { font-size: 13px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.04em; margin: 10px 0 6px 0; }
 </style>
 """, unsafe_allow_html=True)
 
-# Top Application Banner
+# Top Application Header
 st.markdown("""
 <div class="enterprise-navbar">
     <div>
@@ -171,15 +185,15 @@ with st.sidebar:
     
     att_threshold = st.slider(
         "Attendance Cutoff (%)", 50.0, 90.0, 75.0, 1.0,
-        help="Mandatory university attendance threshold. Below this cutoff triggers an Attendance Warning or Critical At-Risk flag."
+        help="Mandatory university attendance threshold. Falling below triggers an Attendance Warning or Critical At-Risk flag."
     )
     z_risk_threshold = st.slider(
         "Critical Z-Score Cutoff (\u03c3)", -2.0, 0.0, -0.5, 0.1,
-        help="Standard deviation cutoff relative to subject average. Scores below this threshold signal severe relative academic underperformance."
+        help="Standard deviation cutoff relative to subject average. Scores below signal relative academic underperformance."
     )
     est_tuition_fee = st.number_input(
         "Annual Tuition Fee (\u20b9)", value=125000, step=5000,
-        help="Annual departmental tuition fee per student used to calculate total financial tuition revenue exposure for at-risk students."
+        help="Annual departmental tuition fee per student used to calculate total financial tuition revenue exposure."
     )
 
 # ---------------------------------------------------------
@@ -272,7 +286,7 @@ def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
     clean_df = clean_df.merge(subject_summary[['subject_id', 'subject_mean', 'subject_std']], on='subject_id', how='left')
     clean_df['z_score'] = (clean_df['normalized_mark_pct'] - clean_df['subject_mean']) / clean_df['subject_std']
 
-    # Indian 10-Point Grade Point (GPA/SGPA Scale)
+    # Indian 10-Point Grade Point (SGPA Scale)
     def mark_to_gpa(pct):
         if pct >= 90: return 10.0 # O Grade
         elif pct >= 80: return 9.0  # A+ Grade
@@ -407,7 +421,6 @@ with tab1:
             x = clean_df['attendance_percentage'].values
             y = clean_df['normalized_mark_pct'].values
             
-            # Rigorous Statistical Regression using SciPy
             slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
             r_squared = r_value ** 2
 
@@ -446,7 +459,7 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
     else:
-        st.markdown(empty_banner_html, unsafe_allow_html=True)
+        st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # TAB 2: COURSE OUTCOMES & OBE ATTAINMENT
@@ -495,7 +508,7 @@ with tab2:
         </div>
         """, unsafe_allow_html=True)
     else:
-        st.markdown(empty_banner_html, unsafe_allow_html=True)
+        st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # TAB 3: STUDENT DIRECTORY & 360° SCORECARD
@@ -561,7 +574,7 @@ with tab3:
                     st.plotly_chart(fig_radar, use_container_width=True)
 
     else:
-        st.markdown(empty_banner_html, unsafe_allow_html=True)
+        st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # TAB 4: EARLY WARNING MATRIX & FINANCIAL LOSS
@@ -611,7 +624,7 @@ with tab4:
         st.download_button("Export Institutional Action Strategy Matrix (.csv)", data=action_csv, file_name=f"at_risk_action_matrix_{datetime.now().strftime('%Y%m%d')}.csv", use_container_width=True)
 
     else:
-        st.markdown(empty_banner_html, unsafe_allow_html=True)
+        st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # TAB 5: LOCAL AI ACADEMIC QUERY ASSISTANT
@@ -649,7 +662,6 @@ with tab5:
                 top_list = "\n".join([f"1. **{row['student_name']}** ({row['student_id']}) — Score: {row['overall_mean_pct']:.1f}%, SGPA: {row['est_sgpa']:.1f}" for _, row in top_df.iterrows()])
                 response = f"Here are the top 5 students by overall academic score:\n\n{top_list}"
                 
-                
             elif "hardest" in query_lower or "difficult" in query_lower or "subject" in query_lower:
                 hardest = subject_summary.sort_values('Subject Difficulty Index (SDI)', ascending=False).iloc[0]
                 response = f"The hardest course is **{hardest['subject_id']}** with a Subject Difficulty Index (SDI) of **{hardest['Subject Difficulty Index (SDI)']:.1f}** and an average mark of **{hardest['subject_mean']:.1f}%**."
@@ -667,4 +679,4 @@ with tab5:
             st.chat_message("assistant").write(response)
 
     else:
-        st.markdown(empty_banner_html, unsafe_allow_html=True)
+        st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
