@@ -10,763 +10,470 @@ from datetime import datetime
 # PAGE CONFIGURATION & ENTERPRISE DESIGN SYSTEM
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="Academic Decision Intelligence Platform",
-    page_icon="https://img.icons8.com/ios-filled/50/4f46e5/analytics.png",
+    page_title="Academic Decision Intelligence",
+    page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS System (Slate / Indigo Palette, High Density, Zero Wasted Space)
+# Advanced CSS Injection for Scroll Optimization & SaaS UI
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
-    /* Reset Streamlit Padding */
-    .main .block-container {
-        padding-top: 1.25rem !important;
-        padding-bottom: 1.5rem !important;
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    
+    /* Zero-wasted-space container padding */
+    .block-container {
+        padding: 1.25rem 2rem 2rem 2rem !important;
         max-width: 100% !important;
     }
     
-    [data-testid="stVerticalBlock"] {
-        gap: 0.75rem !important;
+    /* Global Element Spacing */
+    [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
+        gap: 0.85rem !important;
     }
-    
-    html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    
-    /* Top Enterprise Control Bar */
-    .top-navbar {
+
+    /* Enterprise Navigation Header */
+    .enterprise-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         background: #0F172A;
-        color: #FFFFFF;
-        padding: 12px 20px;
+        padding: 14px 24px;
         border-radius: 8px;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
         border-left: 4px solid #4F46E5;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    .top-navbar .brand-title {
-        font-size: 16px;
-        font-weight: 800;
-        letter-spacing: -0.01em;
-        color: #F8FAFC;
-    }
-    .top-navbar .brand-sub {
-        font-size: 12px;
-        color: #94A3B8;
-        font-weight: 400;
-    }
-    .top-navbar .status-tag {
-        background: #1E293B;
-        border: 1px solid #334155;
-        color: #38BDF8;
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
+    .brand-title { color: #F8FAFC; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
+    .brand-sub { color: #94A3B8; font-size: 13px; font-weight: 400; margin-left: 8px; }
+    .status-badge {
+        background: #064E3B; border: 1px solid #047857; color: #34D399;
+        padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
     }
 
-    /* Ingestion Section Card */
-    .ingestion-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    }
-
-    /* Compact KPI Cards */
+    /* Interactive KPI Tiles */
     .kpi-tile {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 6px;
-        padding: 12px 16px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px;
+        padding: 16px; transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
-    .kpi-title {
-        font-size: 11px;
-        font-weight: 700;
-        color: #64748B;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    .kpi-value {
-        font-size: 22px;
-        font-weight: 800;
-        color: #0F172A;
-        line-height: 1.2;
-        margin-top: 2px;
-    }
-    .kpi-meta {
-        font-size: 11px;
-        font-weight: 600;
-        margin-top: 4px;
-    }
-    .sub-good { color: #059669; }
-    .sub-bad { color: #E11D48; }
-    .sub-info { color: #0284C7; }
-
-    /* Clean Enterprise Tabs */
+    .kpi-tile:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08); border-color: #CBD5E1; }
+    .kpi-title { font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em; }
+    .kpi-value { font-size: 26px; font-weight: 800; color: #0F172A; margin: 4px 0; line-height: 1.1; }
+    .kpi-meta { font-size: 12px; font-weight: 600; }
+    
+    /* Tab Styling Optimization */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 6px !important;
-        border-bottom: 2px solid #E2E8F0 !important;
-        background: #F8FAFC;
-        padding: 6px 8px 0px 8px;
-        border-radius: 8px 8px 0 0;
+        gap: 8px !important; border-bottom: 2px solid #E2E8F0 !important;
+        background: #F8FAFC; padding: 8px 12px 0 12px; border-radius: 8px 8px 0 0;
     }
     .stTabs [data-baseweb="tab"] {
-        padding: 8px 18px !important;
-        border-radius: 6px 6px 0 0 !important;
-        font-size: 13px !important;
-        font-weight: 600 !important;
-        color: #64748B !important;
+        padding: 10px 20px !important; border-radius: 6px 6px 0 0 !important;
+        font-size: 14px !important; font-weight: 600 !important; color: #64748B !important;
+        transition: all 0.2s ease; border: 1px solid transparent !important; border-bottom: none !important;
     }
     .stTabs [aria-selected="true"] {
-        background: #FFFFFF !important;
-        color: #4F46E5 !important;
-        border-top: 3px solid #4F46E5 !important;
-        box-shadow: 0 -1px 3px rgba(0,0,0,0.03);
+        background: #FFFFFF !important; color: #4F46E5 !important;
+        border-color: #E2E8F0 !important; border-top: 3px solid #4F46E5 !important;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.02);
     }
 
-    /* Decision Insight Banners */
+    /* Banners & Empty States */
     .insight-banner {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-left: 4px solid #4F46E5;
-        padding: 12px 16px;
-        border-radius: 6px;
-        font-size: 12.5px;
-        color: #334155;
-        line-height: 1.6;
-        margin-top: 10px;
-        margin-bottom: 10px;
+        background: linear-gradient(90deg, #F8FAFC 0%, #FFFFFF 100%);
+        border: 1px solid #E2E8F0; border-left: 4px solid #4F46E5;
+        padding: 16px 20px; border-radius: 6px; font-size: 13.5px; color: #334155;
+        line-height: 1.6; margin: 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
-
-    /* Empty State Placeholders */
     .empty-state {
-        background: #FFFFFF;
-        border: 2px dashed #E2E8F0;
-        border-radius: 8px;
-        padding: 40px;
-        text-align: center;
-        color: #64748B;
-        margin: 20px 0;
+        background: #F8FAFC; border: 2px dashed #CBD5E1; border-radius: 12px;
+        padding: 60px 20px; text-align: center; margin: 24px 0;
     }
-    .empty-state-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #334155;
-        margin-bottom: 6px;
-    }
-    .empty-state-sub {
-        font-size: 13px;
-        color: #94A3B8;
-    }
-
-    .section-label {
-        font-size: 13px;
-        font-weight: 700;
-        color: #0F172A;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin-top: 8px;
-        margin-bottom: 8px;
-    }
+    .empty-state h3 { color: #334155; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .empty-state p { color: #64748B; font-size: 14px; max-width: 500px; margin: 0 auto; }
+    
+    .section-lbl { font-size: 14px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.05em; margin: 16px 0 8px 0; display: block; }
 </style>
 """, unsafe_allow_html=True)
 
-# Top Bar Navigation
-st.markdown("""
-<div class="top-navbar">
-    <div>
-        <span class="brand-title">ACADEMIC DECISION INTELLIGENCE PLATFORM</span>
-        <span class="brand-sub"> &nbsp;|&nbsp; Institutional Analytics, Outcome Attainment (OBE) & Attrition Risk Engine</span>
-    </div>
-    <div class="status-tag">SYSTEM READY</div>
-</div>
-""", unsafe_allow_html=True)
-
 # ---------------------------------------------------------
-# PLOTLY CHART CONFIGURATION (Generous Aspect Ratios)
+# CONSTANTS & CONFIGURATION
 # ---------------------------------------------------------
 PLOTLY_CONFIG = dict(
-    font=dict(family="Inter, sans-serif", color="#334155", size=12),
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="#FFFFFF",
-    margin=dict(l=40, r=20, t=40, b=40),
-    xaxis=dict(showgrid=True, gridcolor="#F1F5F9", linecolor="#CBD5E1"),
-    yaxis=dict(showgrid=True, gridcolor="#F1F5F9", linecolor="#CBD5E1")
+    font=dict(family="Inter", color="#334155", size=12),
+    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF",
+    margin=dict(l=40, r=20, t=50, b=40),
+    xaxis=dict(showgrid=True, gridcolor="#F1F5F9", linecolor="#CBD5E1", zerolinecolor="#E2E8F0"),
+    yaxis=dict(showgrid=True, gridcolor="#F1F5F9", linecolor="#CBD5E1", zerolinecolor="#E2E8F0")
 )
 
-# ---------------------------------------------------------
-# SIDEBAR CONTROLS & POLICY PARAMETERS
-# ---------------------------------------------------------
-with st.sidebar:
-    st.markdown("<div class='section-label'>Governance Policy Sandbox</div>", unsafe_allow_html=True)
-    st.markdown("---")
-    
-    att_threshold = st.slider("Mandatory Attendance Cutoff (%)", 50.0, 90.0, 75.0, 1.0, help="Institutional cutoff for mandatory attendance policy.")
-    z_risk_threshold = st.slider("Critical Z-Score Risk Cutoff (\u03c3)", -2.0, 0.0, -0.5, 0.1, help="Performance standard deviation below subject mean.")
-    est_tuition_fee = st.number_input("Annual Tuition Fee per Student (\u20b9)", value=125000, step=5000, help="Used for financial retention risk modeling.")
-
-# ---------------------------------------------------------
-# DYNAMIC SCHEMA MAPPING
-# ---------------------------------------------------------
 ALIAS_MAP = {
-    'student_id': ['student_id', 'roll_no', 'register_no', 'usn', 'id', 'student_code'],
-    'student_name': ['student_name', 'name', 'full_name', 'candidate_name'],
-    'subject_id': ['subject_id', 'subject_code', 'course_id', 'subject'],
-    'attendance_percentage': ['attendance_percentage', 'attendance', 'attendance_pct', 'att_%', 'att'],
-    'marks_obtained': ['marks_obtained', 'marks', 'score', 'obtained_marks', 'total_marks'],
-    'maximum_marks': ['maximum_marks', 'max_marks', 'total_possible', 'max'],
-    'academic_semester': ['academic_semester', 'semester', 'sem', 'semester_id']
+    'student_id': ['student_id', 'roll_no', 'usn', 'id', 'student_code'],
+    'student_name': ['student_name', 'name', 'full_name'],
+    'subject_id': ['subject_id', 'subject_code', 'course_id'],
+    'attendance_percentage': ['attendance_percentage', 'attendance', 'att_%', 'att'],
+    'marks_obtained': ['marks_obtained', 'marks', 'score', 'total_marks'],
+    'maximum_marks': ['maximum_marks', 'max_marks', 'max'],
+    'academic_semester': ['academic_semester', 'semester', 'sem']
 }
 
-def normalize_columns(df):
+# ---------------------------------------------------------
+# CACHED DATA PROCESSING PIPELINE (Optimizes UI Speed)
+# ---------------------------------------------------------
+@st.cache_data(show_spinner=False)
+def process_ingestion(df_raw, att_thresh, z_thresh):
     renamed = {}
-    cols_lower = {str(col).strip().lower(): col for col in df.columns}
+    cols_lower = {str(col).strip().lower(): col for col in df_raw.columns}
     for target, aliases in ALIAS_MAP.items():
         for alias in aliases:
             if alias in cols_lower:
                 renamed[cols_lower[alias]] = target
                 break
-    return df.rename(columns=renamed)
-
-# ---------------------------------------------------------
-# STAGE 1: TOP SECTION — INGESTION & PIPELINE SANITATION
-# ---------------------------------------------------------
-st.markdown("<div class='section-label'>1. Ingestion System & Data Contract Validation</div>", unsafe_allow_html=True)
-
-col_ingest, col_template = st.columns([3, 1])
-
-with col_ingest:
-    uploaded_file = st.file_uploader("Upload Academic Batch Dataset (.csv or .xlsx)", type=["csv", "xlsx"])
-
-with col_template:
-    st.markdown("**Contract Schema**")
-    template_data = pd.DataFrame({
-        "student_id": ["STU_101", "STU_102", "STU_103", "STU_104", "STU_105"],
-        "student_name": ["Alice Smith", "Bob Jones", "Charlie Brown", "Diana Prince", "Evan Wright"],
-        "subject_id": ["MATH101", "CS201", "MATH101", "CS201", "PHY102"],
-        "attendance_percentage": [88.5, 64.0, 92.0, 55.0, 78.0],
-        "marks_obtained": [82.0, 45.0, 95.0, 38.0, 68.0],
-        "maximum_marks": [100.0, 100.0, 100.0, 100.0, 100.0],
-        "academic_semester": ["SEM_07", "SEM_07", "SEM_07", "SEM_07", "SEM_07"]
-    })
+    df_raw = df_raw.rename(columns=renamed)
     
-    buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
-        template_data.to_excel(writer, index=False, sheet_name='Data_Contract')
-    
-    st.download_button(
-        label="Download Schema Contract (.xlsx)",
-        data=buf.getvalue(),
-        file_name="academic_ingestion_template.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True
-    )
+    req_keys = {'student_id', 'subject_id', 'attendance_percentage', 'marks_obtained'}
+    if req_keys - set(df_raw.columns):
+        return None, None, None, None, list(req_keys - set(df_raw.columns))
 
-# Process Ingestion Stream
-clean_df = None
-subject_summary = None
-student_matrix = None
-health_score = 0.0
+    if 'maximum_marks' not in df_raw.columns: df_raw['maximum_marks'] = 100.0
+    if 'student_name' not in df_raw.columns: df_raw['student_name'] = df_raw['student_id']
+    if 'academic_semester' not in df_raw.columns: df_raw['academic_semester'] = "CURRENT"
 
-if uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith('.csv'):
-            raw_df = pd.read_csv(uploaded_file)
-        else:
-            raw_df = pd.read_excel(uploaded_file)
-    except Exception as e:
-        st.error(f"Ingestion Exception: {e}")
-        st.stop()
-        
-    raw_df = normalize_columns(raw_df)
+    clean_rows, audit_entries = [], []
     
-    required_keys = {'student_id', 'subject_id', 'attendance_percentage', 'marks_obtained'}
-    missing = required_keys - set(raw_df.columns)
-    
-    if missing:
-        st.error(f"Data Contract Violation: Could not resolve fields {list(missing)}. Download and use the standard schema contract template.")
-        st.stop()
-        
-    if 'maximum_marks' not in raw_df.columns:
-        raw_df['maximum_marks'] = 100.0
-    if 'student_name' not in raw_df.columns:
-        raw_df['student_name'] = raw_df['student_id']
-    if 'academic_semester' not in raw_df.columns:
-        raw_df['academic_semester'] = "CURRENT_SEM"
-
-    # Sanitation Engine
-    clean_rows = []
-    audit_entries = []
-    
-    for idx, row in raw_df.iterrows():
-        r_num = idx + 2
+    for idx, row in df_raw.iterrows():
         s_id = str(row.get('student_id', '')).strip()
         sub_id = str(row.get('subject_id', '')).strip()
         s_name = str(row.get('student_name', s_id)).strip()
-        sem = str(row.get('academic_semester', 'CURRENT_SEM')).strip()
         
         reasons = []
-        if not s_id or s_id == 'nan':
-            reasons.append("Missing Student ID")
-        if not sub_id or sub_id == 'nan':
-            reasons.append("Missing Subject ID")
+        if not s_id or s_id == 'nan': reasons.append("Missing Student ID")
+        if not sub_id or sub_id == 'nan': reasons.append("Missing Subject ID")
             
         try:
             att = float(row.get('attendance_percentage', -1))
             marks = float(row.get('marks_obtained', -1))
             max_m = float(row.get('maximum_marks', 100.0))
             
-            if att < 0.0 or att > 100.0:
-                reasons.append(f"Attendance out of bounds [0-100%]: {att}%")
-            if marks < 0.0:
-                reasons.append(f"Negative mark value: {marks}")
-            if marks > max_m:
-                reasons.append(f"Marks ({marks}) exceed maximum ({max_m})")
+            if not (0.0 <= att <= 100.0): reasons.append(f"Invalid Attendance: {att}%")
+            if marks < 0.0 or marks > max_m: reasons.append(f"Invalid Marks: {marks}/{max_m}")
                 
             if not reasons:
-                pct_mark = (marks / max_m) * 100.0
                 clean_rows.append({
-                    "student_id": s_id,
-                    "student_name": s_name,
-                    "subject_id": sub_id,
-                    "academic_semester": sem,
-                    "attendance_percentage": att,
-                    "marks_obtained": marks,
-                    "maximum_marks": max_m,
-                    "normalized_mark_pct": pct_mark
+                    "student_id": s_id, "student_name": s_name, "subject_id": sub_id,
+                    "academic_semester": str(row.get('academic_semester', '')).strip(),
+                    "attendance_percentage": att, "marks_obtained": marks,
+                    "maximum_marks": max_m, "normalized_mark_pct": (marks / max_m) * 100.0
                 })
         except ValueError:
-            reasons.append("Non-numeric data in numeric field")
+            reasons.append("Type Error: Expected Numeric")
             
         if reasons:
             audit_entries.append({
-                "Row Number": r_num,
-                "Student ID": s_id,
-                "Subject ID": sub_id,
-                "Rejection Reason": " | ".join(reasons),
-                "Raw Record Payload": str(row.to_dict())
+                "Row": idx + 2, "Student ID": s_id, "Subject ID": sub_id,
+                "Error": " | ".join(reasons), "Payload": str(row.to_dict())
             })
 
-    clean_df = pd.DataFrame(clean_rows)
+    clean_df = pd.DataFrame(clean_rows).drop_duplicates(subset=['student_id', 'subject_id'], keep='first')
     audit_df = pd.DataFrame(audit_entries)
     
-    if not clean_df.empty:
-        before_dedup = len(clean_df)
-        clean_df = clean_df.drop_duplicates(subset=['student_id', 'subject_id', 'academic_semester'], keep='first')
-        dedup_count = before_dedup - len(clean_df)
-        if dedup_count > 0:
-            st.warning(f"Deduplication Engine: Isolated and resolved {dedup_count} duplicate records for identical (Student, Subject, Semester) tuples.")
+    if clean_df.empty: return clean_df, audit_df, None, None, None
 
-    total_received = len(raw_df)
-    clean_count = len(clean_df) if clean_df is not None else 0
-    flagged_count = len(audit_df)
-    health_score = round((clean_count / total_received) * 100, 2) if total_received > 0 else 0.0
-
-    # Data Quality Console KPI Bar
-    k1, k2, k3, k4 = st.columns(4)
-    with k1:
-        st.markdown(f"""<div class="kpi-tile"><div class="kpi-title">Records Ingested</div><div class="kpi-value">{total_received}</div><div class="kpi-meta sub-info">Raw Data Stream</div></div>""", unsafe_allow_html=True)
-    with k2:
-        st.markdown(f"""<div class="kpi-tile"><div class="kpi-title">Clean Records</div><div class="kpi-value">{clean_count}</div><div class="kpi-meta sub-good">Persisted to Pipeline</div></div>""", unsafe_allow_html=True)
-    with k3:
-        st.markdown(f"""<div class="kpi-tile"><div class="kpi-title">Anomalies Isolated</div><div class="kpi-value">{flagged_count}</div><div class="kpi-meta sub-bad">Audit Logged</div></div>""", unsafe_allow_html=True)
-    with k4:
-        st.markdown(f"""<div class="kpi-tile"><div class="kpi-title">Data Health Score</div><div class="kpi-value">{health_score}%</div><div class="kpi-meta {"sub-good" if health_score>=90 else "sub-bad"}">{"NAAC/NBA Compliant" if health_score>=90 else "Action Required"}</div></div>""", unsafe_allow_html=True)
+    # Subject Analytics & OBE
+    sub_summary = clean_df.groupby('subject_id').agg(
+        subject_mean=('normalized_mark_pct', 'mean'),
+        subject_std=('normalized_mark_pct', 'std'),
+        student_count=('student_id', 'nunique'),
+        pass_count=('normalized_mark_pct', lambda x: (x >= 50.0).sum())
+    ).reset_index()
+    sub_summary['subject_std'] = sub_summary['subject_std'].fillna(0.0)
+    sub_summary['SDI'] = (100.0 - sub_summary['subject_mean']).round(2)
+    sub_summary['Pass Rate (%)'] = ((sub_summary['pass_count'] / sub_summary['student_count']) * 100.0).round(1)
     
+    def obe_level(pr):
+        if pr >= 70: return "Level 3 (High)"
+        if pr >= 60: return "Level 2 (Moderate)"
+        if pr >= 50: return "Level 1 (Low)"
+        return "Level 0 (Unattained)"
+    sub_summary['OBE'] = sub_summary['Pass Rate (%)'].apply(obe_level)
+    
+    # Z-Score computation
+    clean_df = clean_df.merge(sub_summary[['subject_id', 'subject_mean', 'subject_std']], on='subject_id', how='left')
+    clean_df['z_score'] = np.where(clean_df['subject_std'] > 0, (clean_df['normalized_mark_pct'] - clean_df['subject_mean']) / clean_df['subject_std'], 0.0)
+
+    # Student Matrix
+    stu_mat = clean_df.groupby(['student_id', 'student_name']).agg(
+        mean_attendance=('attendance_percentage', 'mean'),
+        overall_mean_pct=('normalized_mark_pct', 'mean'),
+        avg_z_score=('z_score', 'mean')
+    ).reset_index()
+    stu_mat['AHI'] = ((stu_mat['overall_mean_pct'] * 0.6) + (stu_mat['mean_attendance'] * 0.4)).round(2)
+
+    def risk_quad(row):
+        a_risk = row['mean_attendance'] < att_thresh
+        z_risk = row['avg_z_score'] < z_thresh
+        if a_risk and z_risk: return "Q1: CRITICAL RISK"
+        if a_risk: return "Q2: ATTENDANCE RISK"
+        if z_risk: return "Q3: ACADEMIC RISK"
+        return "Q4: HIGH PERFORMER"
+    
+    stu_mat['Risk Quadrant'] = stu_mat.apply(risk_quad, axis=1)
+    
+    return clean_df, audit_df, sub_summary, stu_mat, None
+
+# ---------------------------------------------------------
+# SIDEBAR: GOVERNANCE & PARAMS
+# ---------------------------------------------------------
+with st.sidebar:
+    st.image("https://img.icons8.com/color/96/000000/artificial-intelligence.png", width=60)
+    st.markdown("<span class='section-lbl'>Platform Governance</span>", unsafe_allow_html=True)
+    st.markdown("---")
+    att_threshold = st.slider("Attendance Minimum Policy (%)", 50.0, 90.0, 75.0, 1.0)
+    z_risk_threshold = st.slider("Z-Score Risk Threshold (\u03c3)", -2.0, 0.0, -0.5, 0.1)
+    est_tuition = st.number_input("Annual Tuition / Student (\u20b9)", value=125000, step=10000)
+    st.markdown("---")
+    st.caption("Engine: Streamlit + Pandas + Plotly\n\nVersion: 4.2.0 (Production)")
+
+# ---------------------------------------------------------
+# MAIN LAYOUT: HEADER & INGESTION
+# ---------------------------------------------------------
+st.markdown("""
+<div class="enterprise-header">
+    <div>
+        <span class="brand-title">ACADEMIC DECISION INTELLIGENCE PLATFORM</span>
+        <span class="brand-sub">Institutional OBE Analytics & Early Warning System</span>
+    </div>
+    <div class="status-badge">PIPELINE SECURE</div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("<span class='section-lbl'>1. Contract Ingestion & Sanitation Engine</span>", unsafe_allow_html=True)
+
+col_ingest, col_tpl = st.columns([3, 1])
+with col_ingest:
+    uploaded_file = st.file_uploader("Mount Academic Batch Dataset (.csv or .xlsx)", type=["csv", "xlsx"], label_visibility="collapsed")
+with col_tpl:
+    tpl_df = pd.DataFrame({"student_id": ["S101"], "student_name": ["John Doe"], "subject_id": ["CS101"], "attendance_percentage": [85], "marks_obtained": [75], "maximum_marks": [100], "academic_semester": ["SEM_1"]})
+    buf = io.BytesIO()
+    tpl_df.to_excel(buf, index=False, engine='openpyxl')
+    st.download_button("Download Schema Contract (.xlsx)", data=buf.getvalue(), file_name="schema_contract.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+
+# ---------------------------------------------------------
+# EXECUTE PIPELINE
+# ---------------------------------------------------------
+clean_df, audit_df, sub_summary, stu_mat = None, None, None, None
+
+if uploaded_file:
+    raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+    clean_df, audit_df, sub_summary, stu_mat, missing_cols = process_ingestion(raw_df, att_threshold, z_risk_threshold)
+    
+    if missing_cols:
+        st.error(f"Data Contract Violation. Missing mandatory fields: {missing_cols}")
+        st.stop()
+        
+    total_raw = len(raw_df)
+    total_clean = len(clean_df) if clean_df is not None else 0
+    total_anomalies = len(audit_df)
+    health = round((total_clean / total_raw) * 100, 1) if total_raw > 0 else 0
+
+    k1, k2, k3, k4 = st.columns(4)
+    k1.markdown(f"""<div class="kpi-tile"><div class="kpi-title">Raw Payload</div><div class="kpi-value">{total_raw}</div><div class="kpi-meta" style="color:#0284C7;">Records Received</div></div>""", unsafe_allow_html=True)
+    k2.markdown(f"""<div class="kpi-tile"><div class="kpi-title">Sanitized</div><div class="kpi-value">{total_clean}</div><div class="kpi-meta" style="color:#059669;">Persisted to Engine</div></div>""", unsafe_allow_html=True)
+    k3.markdown(f"""<div class="kpi-tile"><div class="kpi-title">Anomalies</div><div class="kpi-value">{total_anomalies}</div><div class="kpi-meta" style="color:#E11D48;">Isolated & Logged</div></div>""", unsafe_allow_html=True)
+    k4.markdown(f"""<div class="kpi-tile"><div class="kpi-title">Health Score</div><div class="kpi-value">{health}%</div><div class="kpi-meta" style="color:{'#059669' if health > 90 else '#D97706'};">{"NBA/NAAC Ready" if health > 90 else "Review Required"}</div></div>""", unsafe_allow_html=True)
+
     if not audit_df.empty:
-        with st.expander("Isolated Anomaly Audit Trail Log (Click to View Rejected Rows)", expanded=False):
-            st.dataframe(audit_df[['Row Number', 'Student ID', 'Subject ID', 'Rejection Reason']], use_container_width=True)
-            audit_csv = audit_df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="Export Audit Log (.csv)",
-                data=audit_csv,
-                file_name=f"audit_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv"
-            )
-
-    if not clean_df.empty:
-        # Calculate Subject Metrics & Z-Scores
-        subject_summary = clean_df.groupby('subject_id').agg(
-            subject_mean=('normalized_mark_pct', 'mean'),
-            subject_std=('normalized_mark_pct', 'std'),
-            avg_attendance=('attendance_percentage', 'mean'),
-            student_count=('student_id', 'nunique'),
-            pass_count=('normalized_mark_pct', lambda x: (x >= 50.0).sum())
-        ).reset_index()
-        
-        subject_summary['subject_std'] = subject_summary['subject_std'].fillna(0.0)
-        subject_summary['Subject Difficulty Index (SDI)'] = (100.0 - subject_summary['subject_mean']).round(2)
-        subject_summary['Pass Rate (%)'] = ((subject_summary['pass_count'] / subject_summary['student_count']) * 100.0).round(1)
-        
-        def get_obe_level(pass_rate):
-            if pass_rate >= 70.0:
-                return "Level 3 (High)"
-            elif pass_rate >= 60.0:
-                return "Level 2 (Moderate)"
-            elif pass_rate >= 50.0:
-                return "Level 1 (Low)"
-            return "Level 0 (Unattained)"
-
-        subject_summary['OBE Target Attainment'] = subject_summary['Pass Rate (%)'].apply(get_obe_level)
-        
-        clean_df = clean_df.merge(subject_summary[['subject_id', 'subject_mean', 'subject_std']], on='subject_id', how='left')
-        clean_df['z_score'] = np.where(
-            clean_df['subject_std'] > 0,
-            (clean_df['normalized_mark_pct'] - clean_df['subject_mean']) / clean_df['subject_std'],
-            0.0
-        )
-
-        # Calculate Student Analytics
-        student_matrix = clean_df.groupby(['student_id', 'student_name']).agg(
-            mean_attendance=('attendance_percentage', 'mean'),
-            overall_mean_pct=('normalized_mark_pct', 'mean'),
-            avg_z_score=('z_score', 'mean'),
-            subjects_count=('subject_id', 'nunique')
-        ).reset_index()
-
-        student_matrix['Academic Health Index (AHI)'] = (
-            (student_matrix['overall_mean_pct'] * 0.60) + (student_matrix['mean_attendance'] * 0.40)
-        ).round(2)
-
-        def classify_quadrant(row):
-            att_low = row['mean_attendance'] < att_threshold
-            z_low = row['avg_z_score'] < z_risk_threshold
-            if att_low and z_low:
-                return "CRITICAL RISK (Q1)"
-            elif att_low and not z_low:
-                return "ATTENDANCE RISK (Q2)"
-            elif not att_low and z_low:
-                return "ACADEMIC RISK (Q3)"
-            return "HIGH PERFORMER (Q4)"
-
-        student_matrix['Risk Quadrant'] = student_matrix.apply(classify_quadrant, axis=1)
+        with st.expander(f"⚠️ View {total_anomalies} Isolated Anomalies (Data Quality Audit)", expanded=False):
+            st.dataframe(audit_df, use_container_width=True, hide_index=True)
 
 # ---------------------------------------------------------
-# STAGE 2: BOTTOM SECTION — ANALYTICS TABS & REPORTS
+# MAIN ANALYTICS HUB
 # ---------------------------------------------------------
-st.markdown("<div class='section-label'>2. Multi-Dimensional Decision Intelligence Hub</div>", unsafe_allow_html=True)
+st.markdown("<span class='section-lbl' style='margin-top:24px;'>2. Multi-Dimensional Intelligence Hub</span>", unsafe_allow_html=True)
 
-tab_class, tab_subject, tab_student, tab_matrix = st.tabs([
-    "Class Performance & Sensitivity Analysis",
-    "Subject Difficulty & OBE Attainment",
-    "Individual Student Scorecard & Merit Profile",
-    "2D Risk Matrix & Financial Retention Planner"
+tab_class, tab_subj, tab_stu, tab_risk = st.tabs([
+    "Aggregate Class Performance", 
+    "Subject Difficulty & OBE", 
+    "Individual Merit Profile", 
+    "2D Risk Matrix & Financials"
 ])
 
-# ---------------------------------------------------------
-# TAB 1: CLASS PERFORMANCE & SENSITIVITY
-# ---------------------------------------------------------
+# Reusable Empty State HTML
+empty_html = """
+<div class="empty-state">
+    <h3>Awaiting Ingestion Stream</h3>
+    <p>Upload a valid academic dataset in Section 1 to unlock interactive models, spatial charts, and automated decision intelligence here.</p>
+</div>
+"""
+
 with tab_class:
-    if clean_df is not None and not clean_df.empty:
-        batch_avg_mark = clean_df['normalized_mark_pct'].mean()
-        batch_avg_att = clean_df['attendance_percentage'].mean()
-        batch_ahi = student_matrix['Academic Health Index (AHI)'].mean()
-        pass_count = (student_matrix['overall_mean_pct'] >= 50.0).sum()
-        pass_rate = (pass_count / len(student_matrix)) * 100.0 if len(student_matrix) > 0 else 0.0
-        
-        c_col1, c_col2, c_col3, c_col4 = st.columns(4)
-        c_col1.metric("Class Average Score", f"{batch_avg_mark:.2f}%")
-        c_col2.metric("Class Average Attendance", f"{batch_avg_att:.1f}%")
-        c_col3.metric("Cohort Health Index", f"{batch_ahi:.1f} / 100")
-        c_col4.metric("Class Pass Rate (\u2265 50%)", f"{pass_rate:.1f}%")
+    if clean_df is not None:
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Cohort Average Score", f"{clean_df['normalized_mark_pct'].mean():.2f}%")
+        c2.metric("Cohort Average Attendance", f"{clean_df['attendance_percentage'].mean():.1f}%")
+        c3.metric("Cohort Health Index (AHI)", f"{stu_mat['AHI'].mean():.1f}")
+        pass_rate = (stu_mat['overall_mean_pct'] >= 50.0).mean() * 100
+        c4.metric("Cohort Pass Rate (\u2265 50%)", f"{pass_rate:.1f}%")
 
-        x = clean_df['attendance_percentage'].values
-        y = clean_df['normalized_mark_pct'].values
-        r_val = clean_df['attendance_percentage'].corr(clean_df['normalized_mark_pct'], method='pearson')
+        col_scatter, col_pie = st.columns([6, 3])
         
-        if len(clean_df) > 1 and np.std(x) > 0:
-            slope, intercept = np.polyfit(x, y, 1)
-            y_pred = slope * x + intercept
-            ss_tot = np.sum((y - np.mean(y))**2)
-            ss_res = np.sum((y - y_pred)**2)
-            r_squared = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
-        else:
-            slope, intercept, r_squared = 0.0, 0.0, 0.0
-
-        col_c1, col_c2 = st.columns([2, 1])
-        with col_c1:
-            fig_class_scatter = px.scatter(
-                clean_df,
-                x="attendance_percentage",
-                y="normalized_mark_pct",
-                color="subject_id",
-                hover_data=["student_id", "student_name"],
-                title=f"Attendance vs Score Scatter Plot & Native OLS Baseline (y = {slope:.2f}x + {intercept:.2f})",
+        with col_scatter:
+            x, y = clean_df['attendance_percentage'], clean_df['normalized_mark_pct']
+            r_val = x.corr(y)
+            slope, intercept = np.polyfit(x, y, 1) if len(x) > 1 and np.std(x) > 0 else (0,0)
+            
+            fig_scatter = px.scatter(
+                clean_df, x="attendance_percentage", y="normalized_mark_pct", color="subject_id",
+                hover_data=["student_name"], title=f"Attendance vs. Score (r = {r_val:.3f})",
                 labels={"attendance_percentage": "Attendance (%)", "normalized_mark_pct": "Score (%)"},
-                color_discrete_sequence=["#4F46E5", "#0284C7", "#D97706", "#059669", "#7C3AED"],
-                height=420
+                height=450, color_discrete_sequence=px.colors.qualitative.Prism
             )
-            fig_class_scatter.update_layout(**PLOTLY_CONFIG)
+            fig_scatter.add_trace(go.Scatter(
+                x=[x.min(), x.max()], y=[slope*x.min()+intercept, slope*x.max()+intercept],
+                mode='lines', name=f'OLS Trend (m={slope:.2f})', line=dict(color='#0F172A', dash='dash', width=2)
+            ))
+            fig_scatter.update_layout(**PLOTLY_CONFIG)
+            st.plotly_chart(fig_scatter, use_container_width=True)
             
-            if len(clean_df) > 1 and np.std(x) > 0:
-                x_range = np.linspace(x.min(), x.max(), 100)
-                y_range = slope * x_range + intercept
-                fig_class_scatter.add_trace(
-                    go.Scatter(
-                        x=x_range,
-                        y=y_range,
-                        mode='lines',
-                        name=f'OLS Baseline (R²={r_squared:.2f})',
-                        line=dict(color='#E11D48', dash='dash', width=2)
-                    )
-                )
-            st.plotly_chart(fig_class_scatter, use_container_width=True)
-            
-        with col_c2:
-            st.metric("Pearson Correlation ($r$)", f"{r_val:+.4f}")
-            st.metric("Regression Slope ($m$)", f"{slope:+.4f} marks / % att")
-            st.metric("Explanatory Power ($R^2$)", f"{r_squared:.4f}")
-            
-            risk_counts = student_matrix['Risk Quadrant'].value_counts().reset_index()
+        with col_pie:
+            risk_counts = stu_mat['Risk Quadrant'].value_counts().reset_index()
             fig_pie = px.pie(
-                risk_counts, 
-                values='count', 
-                names='Risk Quadrant', 
-                title="Cohort Risk Segmentation",
-                color='Risk Quadrant',
+                risk_counts, values='count', names='Risk Quadrant', title="Cohort Risk Segmentation",
+                color='Risk Quadrant', hole=0.4,
                 color_discrete_map={
-                    "CRITICAL RISK (Q1)": "#E11D48",
-                    "ATTENDANCE RISK (Q2)": "#D97706",
-                    "ACADEMIC RISK (Q3)": "#0284C7",
-                    "HIGH PERFORMER (Q4)": "#059669"
-                },
-                height=260
+                    "Q1: CRITICAL RISK": "#E11D48", "Q2: ATTENDANCE RISK": "#D97706",
+                    "Q3: ACADEMIC RISK": "#0284C7", "Q4: HIGH PERFORMER": "#059669"
+                }, height=450
             )
-            fig_pie.update_layout(**PLOTLY_CONFIG)
+            fig_pie.update_layout(**PLOTLY_CONFIG, legend=dict(orientation="h", y=-0.2))
             st.plotly_chart(fig_pie, use_container_width=True)
-
+            
         st.markdown(f"""
         <div class="insight-banner">
-            <strong>Institutional Decision Insight:</strong><br>
-            • <strong>Attendance Sensitivity Rating (Pearson r = {r_val:+.4f}):</strong> {"High positive relationship — lecture attendance directly drives exam performance." if r_val > 0.6 else "Moderate relationship — marks are partially independent of class presence." if r_val > 0.3 else "Low correlation — attendance has minimal linear impact on marks."}<br>
-            • <strong>Grade Yield per Lecture (Slope m = {slope:+.2f}):</strong> Every 10% increase in attendance yields an expected <strong>+{slope*10:.1f} mark increase</strong> in final performance.<br>
-            • <strong>Explanatory Power (R² = {r_squared:.2f}):</strong> Exactly {r_squared*100:.1f}% of overall score variance is explained by attendance alone.
+            <strong>Algorithmic Insight:</strong> The Pearson correlation between attendance and performance is <strong>{r_val:+.3f}</strong>. 
+            Based on the OLS regression slope, a 10% increase in attendance yields an estimated <strong>+{slope*10:.2f} mark</strong> improvement across the cohort.
         </div>
         """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div class="empty-state">
-            <div class="empty-state-title">Awaiting Ingestion Stream</div>
-            <div class="empty-state-sub">Upload an academic dataset using the ingestion system above to generate class performance trends and sensitivity metrics.</div>
-        </div>
-        """, unsafe_allow_html=True)
+    else: st.markdown(empty_html, unsafe_allow_html=True)
 
-# ---------------------------------------------------------
-# TAB 2: SUBJECT DIFFICULTY & OBE ATTAINMENT
-# ---------------------------------------------------------
-with tab_subject:
-    if clean_df is not None and not clean_df.empty and subject_summary is not None:
+with tab_subj:
+    if clean_df is not None:
         st.dataframe(
-            subject_summary[['subject_id', 'student_count', 'subject_mean', 'subject_std', 'Subject Difficulty Index (SDI)', 'Pass Rate (%)', 'OBE Target Attainment']].style.format({
-                "subject_mean": "{:.2f}%",
-                "subject_std": "{:.2f}",
-                "Subject Difficulty Index (SDI)": "{:.2f}",
-                "Pass Rate (%)": "{:.1f}%"
-            }),
-            use_container_width=True
+            sub_summary.style.format({"subject_mean": "{:.2f}%", "subject_std": "{:.2f}", "SDI": "{:.2f}", "Pass Rate (%)": "{:.1f}%"}),
+            use_container_width=True, hide_index=True
         )
         
-        col_s1, col_s2 = st.columns(2)
-        with col_s1:
-            fig_subject_box = px.box(
-                clean_df,
-                x="subject_id",
-                y="normalized_mark_pct",
-                color="subject_id",
-                points="all",
-                title="Subject Grade Distribution (Evaluating Grading Harshness)",
-                labels={"subject_id": "Subject Code", "normalized_mark_pct": "Score (%)"},
-                color_discrete_sequence=["#4F46E5", "#0284C7", "#D97706", "#059669", "#7C3AED"],
-                height=420
+        col_box, col_bar = st.columns(2)
+        with col_box:
+            fig_box = px.box(
+                clean_df, x="subject_id", y="normalized_mark_pct", color="subject_id",
+                title="Grade Distribution & Volatility (Z-Score Basis)",
+                labels={"subject_id": "Subject", "normalized_mark_pct": "Score (%)"}, height=420
             )
-            fig_subject_box.update_layout(**PLOTLY_CONFIG)
-            st.plotly_chart(fig_subject_box, use_container_width=True)
+            fig_box.update_layout(**PLOTLY_CONFIG, showlegend=False)
+            st.plotly_chart(fig_box, use_container_width=True)
             
-        with col_s2:
-            fig_sdi_bar = px.bar(
-                subject_summary,
-                x="subject_id",
-                y="Subject Difficulty Index (SDI)",
-                color="OBE Target Attainment",
-                title="Subject Difficulty Index (SDI = 100 - Mean)",
-                labels={"subject_id": "Subject Code", "Subject Difficulty Index (SDI)": "Difficulty Rating"},
-                color_discrete_map={
-                    "Level 3 (High)": "#059669",
-                    "Level 2 (Moderate)": "#0284C7",
-                    "Level 1 (Low)": "#D97706",
-                    "Level 0 (Unattained)": "#E11D48"
-                },
+        with col_bar:
+            fig_bar = px.bar(
+                sub_summary, x="subject_id", y="SDI", color="OBE",
+                title="Subject Difficulty Index (SDI) vs Attainment",
+                labels={"subject_id": "Subject", "SDI": "Difficulty (100 - Mean)"},
+                color_discrete_map={"Level 3 (High)": "#059669", "Level 2 (Moderate)": "#0284C7", "Level 1 (Low)": "#D97706", "Level 0 (Unattained)": "#E11D48"},
                 height=420
             )
-            fig_sdi_bar.update_layout(**PLOTLY_CONFIG)
-            st.plotly_chart(fig_sdi_bar, use_container_width=True)
+            fig_bar.update_layout(**PLOTLY_CONFIG)
+            st.plotly_chart(fig_bar, use_container_width=True)
+    else: st.markdown(empty_html, unsafe_allow_html=True)
 
-        hardest_sub = subject_summary.sort_values('Subject Difficulty Index (SDI)', ascending=False).iloc[0]
-        st.markdown(f"""
-        <div class="insight-banner">
-            <strong>Course Difficulty & Accreditation Insights:</strong><br>
-            • <strong>Highest Difficulty Course:</strong> <code>{hardest_sub['subject_id']}</code> (SDI = {hardest_sub['Subject Difficulty Index (SDI)']:.1f}, Mean = {hardest_sub['subject_mean']:.1f}%).<br>
-            • <strong>Accreditation Recommendation:</strong> Allocate additional Teaching Assistants (TAs) or remedial tutorial slots to <code>{hardest_sub['subject_id']}</code> to protect NBA/NAAC attainment target metrics.<br>
-            • <strong>Z-Score Fair Merit Normalization:</strong> Standardizes raw marks into Z-scores ($Z = \\frac{{X - \\mu}}{{\\sigma}}$) to evaluate students fairly relative to peer variance, removing course grading bias.
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div class="empty-state">
-            <div class="empty-state-title">Awaiting Ingestion Stream</div>
-            <div class="empty-state-sub">Upload an academic dataset using the ingestion system above to calculate Subject Difficulty Index (SDI) and OBE attainment.</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-# ---------------------------------------------------------
-# TAB 3: INDIVIDUAL STUDENT PROFILE
-# ---------------------------------------------------------
-with tab_student:
-    if clean_df is not None and not clean_df.empty and student_matrix is not None:
-        selected_student = st.selectbox(
-            "Search Student ID or Name:",
-            options=student_matrix['student_id'].unique(),
-            format_func=lambda x: f"{x} — {student_matrix[student_matrix['student_id']==x]['student_name'].values[0]}"
-        )
+with tab_stu:
+    if clean_df is not None:
+        stu_list = stu_mat['student_id'].astype(str) + " — " + stu_mat['student_name']
+        selected = st.selectbox("Search Identity Registry:", options=stu_list, label_visibility="collapsed")
+        sel_id = selected.split(" — ")[0]
         
-        if selected_student:
-            st_info = student_matrix[student_matrix['student_id'] == selected_student].iloc[0]
-            st_records = clean_df[clean_df['student_id'] == selected_student]
-            
-            s_col1, s_col2, s_col3, s_col4 = st.columns(4)
-            s_col1.metric("Student Name", st_info['student_name'])
-            s_col2.metric("Mean Attendance", f"{st_info['mean_attendance']:.1f}%")
-            s_col3.metric("Overall Average Score", f"{st_info['overall_mean_pct']:.2f}%")
-            s_col4.metric("Average Z-Score Deviation", f"{st_info['avg_z_score']:+.2f} \u03c3")
-            
-            st.markdown(f"**Current Risk Status:** `{st_info['Risk Quadrant']}` | **Academic Health Index (AHI):** `{st_info['Academic Health Index (AHI)']} / 100`")
-            
+        stu_data = stu_mat[stu_mat['student_id'] == sel_id].iloc[0]
+        stu_recs = clean_df[clean_df['student_id'] == sel_id]
+        
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Student Name", stu_data['student_name'])
+        m2.metric("Current Quadrant", stu_data['Risk Quadrant'].split(":")[0])
+        m3.metric("Avg Z-Score (Peer Rel)", f"{stu_data['avg_z_score']:+.2f} \u03c3")
+        m4.metric("Health Index (AHI)", f"{stu_data['AHI']:.1f}")
+        
+        col_table, col_radar = st.columns([5, 4])
+        with col_table:
+            st.markdown("<span style='font-size:13px; font-weight:700;'>Transcribed Subject Records</span>", unsafe_allow_html=True)
             st.dataframe(
-                st_records[['subject_id', 'attendance_percentage', 'marks_obtained', 'maximum_marks', 'normalized_mark_pct', 'subject_mean', 'z_score']].style.format({
-                    "attendance_percentage": "{:.1f}%",
-                    "marks_obtained": "{:.1f}",
-                    "maximum_marks": "{:.1f}",
-                    "normalized_mark_pct": "{:.2f}%",
-                    "subject_mean": "{:.2f}%",
-                    "z_score": "{:+.2f} \u03c3"
-                }),
-                use_container_width=True
+                stu_recs[['subject_id', 'attendance_percentage', 'normalized_mark_pct', 'subject_mean', 'z_score']],
+                column_config={
+                    "subject_id": "Subject",
+                    "attendance_percentage": st.column_config.ProgressColumn("Attendance", min_value=0, max_value=100, format="%f%%"),
+                    "normalized_mark_pct": st.column_config.NumberColumn("Score", format="%.1f%%"),
+                    "subject_mean": st.column_config.NumberColumn("Class Avg", format="%.1f%%"),
+                    "z_score": st.column_config.NumberColumn("Z-Score", format="%+.2f σ")
+                },
+                hide_index=True, use_container_width=True, height=360
             )
             
-            fig_student_bar = go.Figure()
-            fig_student_bar.add_trace(go.Bar(
-                x=st_records['subject_id'],
-                y=st_records['normalized_mark_pct'],
-                name='Student Mark %',
-                marker_color='#4F46E5'
+        with col_radar:
+            fig_radar = go.Figure()
+            fig_radar.add_trace(go.Scatterpolar(
+                r=stu_recs['normalized_mark_pct'].tolist() + [stu_recs['normalized_mark_pct'].iloc[0]],
+                theta=stu_recs['subject_id'].tolist() + [stu_recs['subject_id'].iloc[0]],
+                fill='toself', name='Student', line_color='#4F46E5'
             ))
-            fig_student_bar.add_trace(go.Bar(
-                x=st_records['subject_id'],
-                y=st_records['subject_mean'],
-                name='Subject Class Average %',
-                marker_color='#94A3B8'
+            fig_radar.add_trace(go.Scatterpolar(
+                r=stu_recs['subject_mean'].tolist() + [stu_recs['subject_mean'].iloc[0]],
+                theta=stu_recs['subject_id'].tolist() + [stu_recs['subject_id'].iloc[0]],
+                fill='toself', name='Class Avg', line_color='#94A3B8', opacity=0.5
             ))
-            fig_student_bar.update_layout(
-                barmode='group',
-                title=f"Performance Comparison: {st_info['student_name']} vs. Subject Class Averages",
-                xaxis_title="Subject Code",
-                yaxis_title="Score (%)",
-                height=380,
-                **PLOTLY_CONFIG
+            fig_radar.update_layout(
+                polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+                showlegend=True, margin=dict(l=40, r=40, t=30, b=30), height=380,
+                paper_bgcolor="rgba(0,0,0,0)"
             )
-            st.plotly_chart(fig_student_bar, use_container_width=True)
-    else:
-        st.markdown("""
-        <div class="empty-state">
-            <div class="empty-state-title">Awaiting Ingestion Stream</div>
-            <div class="empty-state-sub">Upload an academic dataset using the ingestion system above to search and render student scorecards.</div>
-        </div>
-        """, unsafe_allow_html=True)
+            st.plotly_chart(fig_radar, use_container_width=True)
+    else: st.markdown(empty_html, unsafe_allow_html=True)
 
-# ---------------------------------------------------------
-# TAB 4: AT-RISK MATRIX & INTERVENTION
-# ---------------------------------------------------------
-with tab_matrix:
-    if clean_df is not None and not clean_df.empty and student_matrix is not None:
-        def get_action(quadrant):
-            if quadrant == "CRITICAL RISK (Q1)":
-                return "Schedule Mandatory Faculty Counseling & Notify Parents"
-            elif quadrant == "ATTENDANCE RISK (Q2)":
-                return "Issue Official Low Attendance Warning Letter"
-            elif quadrant == "ACADEMIC RISK (Q3)":
-                return "Assign Remedial Peer Tutor & Subject Workshops"
-            return "Regular Monitoring & Honor Roll Recognition"
-
-        student_matrix['Recommended Action'] = student_matrix['Risk Quadrant'].apply(get_action)
+with tab_risk:
+    if clean_df is not None:
+        q1_mask = stu_mat['Risk Quadrant'] == "Q1: CRITICAL RISK"
+        q1_count = q1_mask.sum()
+        rev_risk = q1_count * est_tuition
+        
+        f1, f2, f3, f4 = st.columns(4)
+        f1.metric("Tuition Revenue At Risk", f"\u20b9{rev_risk:,.0f}", delta=f"{q1_count} Students", delta_color="inverse")
+        f2.metric("Counseling Interventions", q1_count, delta="Mandatory", delta_color="inverse")
+        f3.metric("Warning Letters", (stu_mat['Risk Quadrant'] == "Q2: ATTENDANCE RISK").sum())
+        f4.metric("Remedial Tutors", (stu_mat['Risk Quadrant'] == "Q3: ACADEMIC RISK").sum())
         
         fig_quad = px.scatter(
-            student_matrix,
-            x="mean_attendance",
-            y="avg_z_score",
-            color="Risk Quadrant",
-            hover_data=["student_id", "student_name", "overall_mean_pct", "Academic Health Index (AHI)"],
-            title="2D Cartesian Early Warning Risk Matrix (Attendance vs. Z-Score Deviation)",
-            labels={"mean_attendance": "Mean Attendance (%)", "avg_z_score": "Average Z-Score (\u03c3)"},
+            stu_mat, x="mean_attendance", y="avg_z_score", color="Risk Quadrant",
+            hover_data=["student_id", "student_name", "overall_mean_pct", "AHI"],
+            title="2D Cartesian Early Warning Risk Matrix",
+            labels={"mean_attendance": "Attendance (%)", "avg_z_score": "Mean Z-Score (\u03c3)"},
             color_discrete_map={
-                "CRITICAL RISK (Q1)": "#E11D48",
-                "ATTENDANCE RISK (Q2)": "#D97706",
-                "ACADEMIC RISK (Q3)": "#0284C7",
-                "HIGH PERFORMER (Q4)": "#059669"
-            },
-            height=440
+                "Q1: CRITICAL RISK": "#E11D48", "Q2: ATTENDANCE RISK": "#D97706",
+                "Q3: ACADEMIC RISK": "#0284C7", "Q4: HIGH PERFORMER": "#059669"
+            }, height=480
         )
-        fig_quad.add_vline(x=att_threshold, line_dash="dash", line_color="#64748B", annotation_text=f"Attendance Threshold ({att_threshold}%)")
-        fig_quad.add_hline(y=z_risk_threshold, line_dash="dash", line_color="#64748B", annotation_text=f"Z-Score Threshold ({z_risk_threshold}\u03c3)")
+        fig_quad.add_vline(x=att_threshold, line_dash="dash", line_color="#0F172A", annotation_text="Att Cutoff")
+        fig_quad.add_hline(y=z_risk_threshold, line_dash="dash", line_color="#0F172A", annotation_text="Z Cutoff")
         fig_quad.update_layout(**PLOTLY_CONFIG)
-        
         st.plotly_chart(fig_quad, use_container_width=True)
-        
-        q1_count = (student_matrix['Risk Quadrant'] == "CRITICAL RISK (Q1)").sum()
-        q2_count = (student_matrix['Risk Quadrant'] == "ATTENDANCE RISK (Q2)").sum()
-        q3_count = (student_matrix['Risk Quadrant'] == "ACADEMIC RISK (Q3)").sum()
-        revenue_at_risk = q1_count * est_tuition_fee
 
-        st.markdown("**Institutional Resource & Financial Impact Allocation**")
-        r1, r2, r3, r4 = st.columns(4)
-        r1.metric("Mandatory Counseling Slots Required", f"{q1_count} Sessions", delta=f"{q1_count} Students", delta_color="inverse")
-        r2.metric("Attendance Warning Letters Required", f"{q2_count} Letters", delta=f"{q2_count} Students", delta_color="inverse")
-        r3.metric("Remedial Peer Tutors Required", f"{q3_count} Tutors", delta=f"{q3_count} Students", delta_color="off")
-        r4.metric("Tuition Revenue At-Risk (Q1 Attrition)", f"\u20b9{revenue_at_risk:,.0f}", delta=f"{q1_count} Attrition Candidates", delta_color="inverse")
-
-        st.dataframe(
-            student_matrix[['student_id', 'student_name', 'mean_attendance', 'overall_mean_pct', 'avg_z_score', 'Academic Health Index (AHI)', 'Risk Quadrant', 'Recommended Action']].style.format({
-                "mean_attendance": "{:.1f}%",
-                "overall_mean_pct": "{:.2f}%",
-                "avg_z_score": "{:+.2f} \u03c3",
-                "Academic Health Index (AHI)": "{:.1f}"
-            }),
-            use_container_width=True
-        )
+        stu_mat['Intervention Plan'] = stu_mat['Risk Quadrant'].map({
+            "Q1: CRITICAL RISK": "Mandatory faculty review + Parent intimation",
+            "Q2: ATTENDANCE RISK": "Issue formal low-attendance warning letter",
+            "Q3: ACADEMIC RISK": "Assign remedial subject workshops & peer tutor",
+            "Q4: HIGH PERFORMER": "Honor roll recognition & advanced opportunities"
+        })
         
-        action_csv = student_matrix.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Export Institutional Action Matrix (.csv)",
-            data=action_csv,
-            file_name=f"at_risk_action_matrix_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-    else:
-        st.markdown("""
-        <div class="empty-state">
-            <div class="empty-state-title">Awaiting Ingestion Stream</div>
-            <div class="empty-state-sub">Upload an academic dataset using the ingestion system above to render the 2D Cartesian Risk Matrix and calculate retention revenue impact.</div>
-        </div>
-        """, unsafe_allow_html=True)
+        csv_action = stu_mat.to_csv(index=False).encode('utf-8')
+        st.download_button("Export Institutional Action Strategy (.csv)", data=csv_action, file_name=f"action_matrix_{datetime.now().strftime('%Y%m%d')}.csv", mime="text/csv", type="primary", use_container_width=True)
+    else: st.markdown(empty_html, unsafe_allow_html=True)
