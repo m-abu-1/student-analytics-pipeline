@@ -10,34 +10,79 @@ from datetime import datetime
 # PAGE & ENTERPRISE THEME CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="BIT Enterprise Academic Governance & Decision Intelligence Platform",
+    page_title="BIT Enterprise Academic Governance & Decision Platform",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Enterprise UI
+# Custom Enterprise CSS Design System
 st.markdown("""
 <style>
-    .main-header { font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 2px; }
-    .sub-header { font-size: 14px; color: #475569; margin-bottom: 15px; }
-    .insight-card { background-color: #F8FAFC; border-left: 4px solid #2563EB; padding: 14px; border-radius: 6px; margin-top: 10px; margin-bottom: 15px; font-size: 13px; color: #1E293B; line-height: 1.6; }
-    .governance-card { background-color: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 13px; color: #991B1B; }
-    .stMetric { background-color: #FFFFFF; padding: 12px; border-radius: 8px; border: 1px solid #E2E8F0; }
+    /* Main Layout & Fonts */
+    .main-header { font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 2px; tracking-tight; }
+    .sub-header { font-size: 14px; color: #475569; margin-bottom: 20px; font-weight: 400; }
+    
+    /* Custom Card Containers */
+    .insight-card { 
+        background-color: #F8FAFC; 
+        border-left: 5px solid #2563EB; 
+        padding: 16px; 
+        border-radius: 8px; 
+        margin-top: 12px; 
+        margin-bottom: 16px; 
+        font-size: 13.5px; 
+        color: #1E293B; 
+        line-height: 1.6;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .governance-card { 
+        background-color: #FEF2F2; 
+        border-left: 5px solid #EF4444; 
+        padding: 14px; 
+        border-radius: 8px; 
+        margin-bottom: 16px; 
+        font-size: 13.5px; 
+        color: #991B1B; 
+    }
+    .status-pill {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .pill-critical { background-color: #FEE2E2; color: #991B1B; }
+    .pill-warning { background-color: #FEF3C7; color: #92400E; }
+    .pill-academic { background-color: #DBEAFE; color: #1E40AF; }
+    .pill-success { background-color: #D1FAE5; color: #065F46; }
+
+    /* Streamlit UI Tweaks */
+    div[data-testid="stMetricValue"] { font-weight: 700; font-size: 24px; }
+    .stTabs [data-baseweb="tab-list"] { gap: 8px; }
+    .stTabs [data-baseweb="tab"] { 
+        padding-left: 16px; 
+        padding-right: 16px; 
+        padding-top: 10px; 
+        padding-bottom: 10px; 
+        border-radius: 6px; 
+        font-weight: 600;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="main-header">🛡️ Academic Data Quality Governance & Decision Intelligence Platform</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Bannari Amman Institute of Technology — Institutional Analytics, Outcome Attainment (OBE) & Financial Retention Engine</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Bannari Amman Institute of Technology — Multi-Level Analytics, Outcome Attainment (OBE) & Institutional Risk Engine</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # SIDEBAR - CONTROLS & INGESTION CONTRACT ENGINE
 # ---------------------------------------------------------
 with st.sidebar:
     st.image("https://img.icons8.com/color/96/000000/analytics.png", width=64)
-    st.header("⚙️ Data Engineering Controls")
+    st.header("⚙️ Data Controls & Sandbox")
     
-    st.subheader("1. Institutional Data Contract")
+    st.subheader("1. Download Schema Contract")
     template_data = pd.DataFrame({
         "student_id": ["STU_101", "STU_102", "STU_103", "STU_104", "STU_105"],
         "student_name": ["Alice Smith", "Bob Jones", "Charlie Brown", "Diana Prince", "Evan Wright"],
@@ -53,7 +98,7 @@ with st.sidebar:
         template_data.to_excel(writer, index=False, sheet_name='Data_Contract')
     
     st.download_button(
-        label="📥 Download Excel Contract Schema",
+        label="📥 Download Excel Schema Template",
         data=buf.getvalue(),
         file_name="academic_ingestion_template.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -61,10 +106,10 @@ with st.sidebar:
     )
     
     st.markdown("---")
-    st.subheader("2. Policy & Governance Cutoffs")
-    att_threshold = st.slider("Mandatory Attendance Policy Cutoff (%)", 50.0, 90.0, 75.0, 1.0, help="Institutional mandatory attendance policy benchmark.")
-    z_risk_threshold = st.slider("Critical Z-Score Risk Cutoff (\u03c3)", -2.0, 0.0, -0.5, 0.1, help="Standard deviation threshold relative to cohort mean.")
-    est_tuition_fee = st.number_input("Estimated Annual Tuition per Student (\u20b9)", value=125000, step=5000, help="Used for financial retention risk calculations.")
+    st.subheader("2. Policy Sandbox Controls")
+    att_threshold = st.slider("Mandatory Attendance Cutoff (%)", 50.0, 90.0, 75.0, 1.0, help="Institutional mandatory attendance benchmark.")
+    z_risk_threshold = st.slider("Critical Z-Score Cutoff (\u03c3)", -2.0, 0.0, -0.5, 0.1, help="Standard deviation threshold relative to cohort mean.")
+    est_tuition_fee = st.number_input("Annual Tuition Fee per Student (\u20b9)", value=125000, step=5000, help="Used for financial attrition risk modeling.")
 
 # ---------------------------------------------------------
 # HELPER FUNCTIONS: DYNAMIC COLUMN ALIASING & SCHEMA MAPPING
@@ -90,9 +135,9 @@ def normalize_columns(df):
     return df.rename(columns=renamed)
 
 # ---------------------------------------------------------
-# STAGE 1: INGESTION & PIPELINE SANITATION
+# STAGE 1: INGESTION & PIPELINE SANITATION ENGINE
 # ---------------------------------------------------------
-uploaded_file = st.file_uploader("Upload Raw Academic Batch Dataset (.csv or .xlsx)", type=["csv", "xlsx"])
+uploaded_file = st.file_uploader("Upload Raw Academic Dataset (.csv or .xlsx)", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
     try:
@@ -110,7 +155,7 @@ if uploaded_file is not None:
     missing = required_keys - set(raw_df.columns)
     
     if missing:
-        st.error(f"❌ Data Contract Violation: Could not resolve required fields: {list(missing)}. Download and use the standard schema template from the sidebar.")
+        st.error(f"❌ Data Contract Violation: Could not map required fields: {list(missing)}. Download and use the standard schema template from the sidebar.")
         st.stop()
         
     if 'maximum_marks' not in raw_df.columns:
@@ -146,7 +191,7 @@ if uploaded_file is not None:
             if att < 0.0 or att > 100.0:
                 reasons.append(f"Attendance out of bounds [0-100%]: {att}%")
             if marks < 0.0:
-                reasons.append(f"Negative score value detected: {marks}")
+                reasons.append(f"Negative mark value detected: {marks}")
             if marks > max_m:
                 reasons.append(f"Marks ({marks}) exceed maximum limit ({max_m})")
                 
@@ -194,7 +239,7 @@ if uploaded_file is not None:
     # ---------------------------------------------------------
     # STAGE 2: PIPELINE QUALITY AUDIT CONSOLE
     # ---------------------------------------------------------
-    st.markdown("### 1. Automated Pipeline Quality & Sanitation Audit Console")
+    st.markdown("### 1. Data Quality Sanitation & Health Audit Console")
     
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Records Ingested", total_received)
@@ -229,12 +274,25 @@ if uploaded_file is not None:
         subject_mean=('normalized_mark_pct', 'mean'),
         subject_std=('normalized_mark_pct', 'std'),
         avg_attendance=('attendance_percentage', 'mean'),
-        student_count=('student_id', 'nunique')
+        student_count=('student_id', 'nunique'),
+        pass_count=('normalized_mark_pct', lambda x: (x >= 50.0).sum())
     ).reset_index()
     
     subject_summary['subject_std'] = subject_summary['subject_std'].fillna(0.0)
     subject_summary['Subject Difficulty Index (SDI)'] = (100.0 - subject_summary['subject_mean']).round(2)
-    subject_summary['OBE Target Attainment'] = np.where(subject_summary['subject_mean'] >= 60.0, "ATTAINED (PASS)", "NOT ATTAINED (RISK)")
+    subject_summary['Pass Rate (%)'] = ((subject_summary['pass_count'] / subject_summary['student_count']) * 100.0).round(1)
+    
+    # OBE Attainment Calculation (Level 3: >70% pass, Level 2: >60%, Level 1: >50%, Level 0: <50%)
+    def get_obe_level(pass_rate):
+        if pass_rate >= 70.0:
+            return "LEVEL 3 (EXCELLENT)"
+        elif pass_rate >= 60.0:
+            return "LEVEL 2 (GOOD)"
+        elif pass_rate >= 50.0:
+            return "LEVEL 1 (MODERATE)"
+        return "LEVEL 0 (UNATTAINED)"
+
+    subject_summary['OBE Attainment Level'] = subject_summary['Pass Rate (%)'].apply(get_obe_level)
     
     clean_df = clean_df.merge(subject_summary[['subject_id', 'subject_mean', 'subject_std']], on='subject_id', how='left')
     clean_df['z_score'] = np.where(
@@ -251,7 +309,7 @@ if uploaded_file is not None:
         subjects_count=('subject_id', 'nunique')
     ).reset_index()
 
-    # Composite Academic Health Index (AHI)
+    # Composite Academic Health Index (AHI): 60% Performance + 40% Attendance
     student_matrix['Academic Health Index (AHI)'] = (
         (student_matrix['overall_mean_pct'] * 0.60) + (student_matrix['mean_attendance'] * 0.40)
     ).round(2)
@@ -275,15 +333,51 @@ if uploaded_file is not None:
     st.markdown("---")
     st.markdown("### 2. Multi-Dimensional Decision Intelligence Hub")
 
-    tab_class, tab_subject, tab_student, tab_matrix = st.tabs([
+    tab_exec, tab_class, tab_subject, tab_student, tab_matrix = st.tabs([
+        "🏛️ Executive Accreditation Suite",
         "🏫 Class Analytics & Sensitivity",
         "📚 Subject Variance & OBE Attainment",
         "👤 Student Scorecard & Relative Merit",
-        "🎯 Risk Matrix & Financial Retention"
+        "🎯 Risk Matrix & Policy Sandbox"
     ])
 
     # ---------------------------------------------------------
-    # VIEW 1: CLASS-WISE ANALYTICS & SENSITIVITY
+    # TAB 1: EXECUTIVE ACCREDITATION SUITE (NAAC / NBA)
+    # ---------------------------------------------------------
+    with tab_exec:
+        st.subheader("Institutional Executive Summary & NAAC/NBA Attainment Card")
+        
+        ex_col1, ex_col2, ex_col3, ex_col4 = st.columns(4)
+        total_students = len(student_matrix)
+        overall_batch_mean = clean_df['normalized_mark_pct'].mean()
+        obe_attained_subjects = (subject_summary['Pass Rate (%)'] >= 60.0).sum()
+        total_subjects = len(subject_summary)
+        
+        ex_col1.metric("Total Cohort Size", total_students)
+        ex_col2.metric("Institutional Average Score", f"{overall_batch_mean:.2f}%")
+        ex_col3.metric("OBE Attainment Compliance", f"{obe_attained_subjects} / {total_subjects} Courses")
+        ex_col4.metric("Data Audit Health", f"{health_score}%", delta="NAAC Ready" if health_score >= 90 else "Action Required", delta_color="normal" if health_score >= 90 else "inverse")
+
+        st.markdown("##### NAAC/NBA Course Outcome (CO) Attainment Summary Table")
+        st.dataframe(
+            subject_summary[['subject_id', 'student_count', 'subject_mean', 'Subject Difficulty Index (SDI)', 'Pass Rate (%)', 'OBE Attainment Level']].style.format({
+                "subject_mean": "{:.2f}%",
+                "Subject Difficulty Index (SDI)": "{:.2f}",
+                "Pass Rate (%)": "{:.1f}%"
+            }),
+            use_container_width=True
+        )
+
+        st.markdown(f"""
+        <div class="insight-card">
+            <strong>🏛️ Executive Accreditation Governance Notice:</strong><br>
+            • <strong>Compliance Rating:</strong> {(obe_attained_subjects/total_subjects)*100:.1f}% of active courses meet or exceed the mandatory 60% student pass threshold for Outcome-Based Education (OBE) criteria.<br>
+            • <strong>Audit Recommendation:</strong> Formally submit this report snapshot to the IQAC (Internal Quality Assurance Cell) as verified supporting evidence for criterion 2.6 (Student Performance and Learning Outcomes).
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ---------------------------------------------------------
+    # TAB 2: CLASS-WISE ANALYTICS & SENSITIVITY
     # ---------------------------------------------------------
     with tab_class:
         st.subheader("Class & Cohort Level Decision Metrics")
@@ -299,6 +393,24 @@ if uploaded_file is not None:
         m2.metric("Class Average Attendance", f"{batch_avg_att:.1f}%")
         m3.metric("Cohort Academic Health Index", f"{batch_ahi:.1f} / 100")
         m4.metric("Class Pass Rate (\u2265 50%)", f"{pass_rate:.1f}%")
+
+        # Multi-Semester Longitudinal Analysis (If data contains multiple semesters)
+        if 'academic_semester' in clean_df.columns and clean_df['academic_semester'].nunique() > 1:
+            st.markdown("#### Longitudinal Semester-over-Semester Performance Trend")
+            sem_trend = clean_df.groupby('academic_semester').agg(
+                sem_mark=('normalized_mark_pct', 'mean'),
+                sem_att=('attendance_percentage', 'mean')
+            ).reset_index()
+            
+            fig_sem = px.line(
+                sem_trend, 
+                x="academic_semester", 
+                y=["sem_mark", "sem_att"], 
+                markers=True,
+                title="Longitudinal Progression Across Academic Semesters",
+                labels={"value": "Percentage (%)", "academic_semester": "Academic Semester", "variable": "Metric"}
+            )
+            st.plotly_chart(fig_sem, use_container_width=True)
 
         st.markdown("#### Bivariate Statistical Relationship & Decision Translation")
         
@@ -374,18 +486,19 @@ if uploaded_file is not None:
         """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # VIEW 2: SUBJECT-WISE ANALYTICS & OBE
+    # TAB 3: SUBJECT-WISE ANALYTICS & OBE
     # ---------------------------------------------------------
     with tab_subject:
         st.subheader("Subject Grading Variance & Outcome-Based Education (OBE) Matrix")
         
-        st.markdown("##### Subject Difficulty Index (SDI) & Accreditation Attainment")
+        st.markdown("##### Subject Difficulty Index (SDI) & Summary Metrics")
         st.dataframe(
             subject_summary.style.format({
                 "subject_mean": "{:.2f}%",
                 "subject_std": "{:.2f}",
                 "avg_attendance": "{:.1f}%",
-                "Subject Difficulty Index (SDI)": "{:.2f}"
+                "Subject Difficulty Index (SDI)": "{:.2f}",
+                "Pass Rate (%)": "{:.1f}%"
             }),
             use_container_width=True
         )
@@ -408,7 +521,7 @@ if uploaded_file is not None:
                 subject_summary,
                 x="subject_id",
                 y="Subject Difficulty Index (SDI)",
-                color="OBE Target Attainment",
+                color="OBE Attainment Level",
                 title="Subject Difficulty Index Breakdown (SDI = 100 - Mean)",
                 labels={"subject_id": "Subject Code", "Subject Difficulty Index (SDI)": "SDI Rating"}
             )
@@ -425,7 +538,7 @@ if uploaded_file is not None:
         """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # VIEW 3: STUDENT SCORECARD & MERIT PROFILE
+    # TAB 4: STUDENT SCORECARD & MERIT PROFILE
     # ---------------------------------------------------------
     with tab_student:
         st.subheader("Student Individual Scorecard & Relative Merit Profile")
@@ -491,10 +604,10 @@ if uploaded_file is not None:
             """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # VIEW 4: 4-QUADRANT RISK & FINANCIAL RETENTION
+    # TAB 5: 4-QUADRANT RISK & FINANCIAL RETENTION
     # ---------------------------------------------------------
     with tab_matrix:
-        st.subheader("2D Cartesian Early Warning Risk Matrix & Financial Retention Planner")
+        st.subheader("2D Cartesian Early Warning Risk Matrix & Predictive Policy Sandbox")
         
         def get_action(quadrant):
             if quadrant == "CRITICAL RISK (Q1)":
