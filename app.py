@@ -317,16 +317,31 @@ if uploaded_file is not None:
 
         col_c1, col_c2 = st.columns([2, 1])
         with col_c1:
+            # Native Scatter Plot (Without statsmodels dependency)
             fig_class_scatter = px.scatter(
                 clean_df,
                 x="attendance_percentage",
                 y="normalized_mark_pct",
                 color="subject_id",
                 hover_data=["student_id", "student_name"],
-                trendline="ols",
                 title=f"Class Scatter Plot & OLS Trend Line (y = {slope:.2f}x + {intercept:.2f})",
                 labels={"attendance_percentage": "Attendance Percentage (%)", "normalized_mark_pct": "Normalized Mark (%)"}
             )
+            
+            # Plot native OLS trendline via NumPy
+            if len(clean_df) > 1 and np.std(x) > 0:
+                x_range = np.linspace(x.min(), x.max(), 100)
+                y_range = slope * x_range + intercept
+                fig_class_scatter.add_trace(
+                    go.Scatter(
+                        x=x_range,
+                        y=y_range,
+                        mode='lines',
+                        name=f'OLS Line (R²={r_squared:.2f})',
+                        line=dict(color='#DC2626', dash='dash', width=2)
+                    )
+                )
+                
             st.plotly_chart(fig_class_scatter, use_container_width=True)
             
         with col_c2:
