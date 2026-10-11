@@ -25,114 +25,118 @@ EMPTY_BANNER_HTML = """
 </div>
 """
 
-# Custom High-Density CSS Architecture (Google Cloud & Zoho Analytics Theme)
+# Custom High-Density CSS Architecture (Google Cloud & Zoho Analytics Enterprise Theme)
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
     html, body, [class*="css"] { 
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
-        background-color: #f8f9fa;
+        background-color: #F8F9FA !important;
         -webkit-font-smoothing: antialiased;
     }
     
-    /* Zero Whitespace Viewport Optimization */
+    /* Anti-Clipping Viewport Padding (Prevents Streamlit Floating Header Overlap) */
     .block-container {
-        padding-top: 1.25rem !important;
-        padding-bottom: 1.5rem !important;
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
+        padding-top: 3.8rem !important;
+        padding-bottom: 2.0rem !important;
+        padding-left: 1.8rem !important;
+        padding-right: 1.8rem !important;
         max-width: 100% !important;
     }
     
-    [data-testid="stVerticalBlock"] { gap: 0.75rem !important; }
+    [data-testid="stVerticalBlock"] { gap: 0.85rem !important; }
 
-    /* Responsive SaaS Executive Header Banner */
+    /* Streamlit Default Header Bar Transparency */
+    header[data-testid="stHeader"] {
+        background-color: rgba(248, 249, 250, 0.85) !important;
+        backdrop-filter: blur(8px);
+        z-index: 99 !important;
+    }
+
+    /* Enterprise Header Banner */
     .workspace-navbar {
         width: 100%;
         box-sizing: border-box;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+        background: #0F172A;
         color: #FFFFFF;
-        padding: 16px 24px;
+        padding: 18px 24px;
         border-radius: 8px;
-        margin-bottom: 14px;
-        border-left: 6px solid #1a73e8;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        margin-bottom: 16px;
+        border-left: 6px solid #1A73E8;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     }
-    .workspace-navbar .brand-title { font-size: 18px; font-weight: 800; color: #F8FAFC; letter-spacing: -0.02em; }
-    .workspace-navbar .brand-sub { font-size: 12.5px; color: #94A3B8; font-weight: 400; margin-left: 8px; }
+    .workspace-navbar .brand-title { font-size: 19px; font-weight: 800; color: #F8FAFC; letter-spacing: -0.02em; }
+    .workspace-navbar .brand-sub { font-size: 13px; color: #94A3B8; font-weight: 400; margin-left: 8px; }
     .workspace-navbar .status-tag {
-        background: rgba(26, 115, 232, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38BDF8;
+        background: rgba(26, 115, 232, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); color: #38BDF8;
         padding: 5px 14px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
-    /* Spacious Google Workspace Navigation Tabs */
+    /* Google Material Workspace Navigation Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px !important;
-        border-bottom: 2px solid #dadce0 !important;
-        background-color: #ffffff;
-        padding: 8px 14px 0px 14px !important;
+        border-bottom: 2px solid #DADCE0 !important;
+        background-color: #FFFFFF;
+        padding: 6px 16px 0px 16px !important;
         border-radius: 8px 8px 0 0;
-        box-shadow: 0 1px 2px rgba(60,64,67,0.05);
+        box-shadow: 0 1px 3px rgba(60,64,67,0.05);
         width: 100% !important;
         display: flex !important;
         flex-wrap: wrap !important;
     }
     .stTabs [data-baseweb="tab"] {
-        padding: 12px 22px !important;
+        height: 42px !important;
+        padding: 0px 20px !important;
         font-size: 13.5px !important;
         font-weight: 600 !important;
-        color: #5f6368 !important;
-        border-radius: 6px 6px 0 0 !important;
+        color: #5F6368 !important;
+        border-radius: 4px 4px 0 0 !important;
         background-color: transparent !important;
-        border: 1px solid transparent !important;
-        border-bottom: none !important;
+        border: none !important;
         white-space: nowrap !important;
         transition: all 0.2s ease-in-out;
     }
     .stTabs [aria-selected="true"] {
-        color: #1a73e8 !important;
-        background-color: #e8f0fe !important;
-        border-top: 3px solid #1a73e8 !important;
+        color: #1A73E8 !important;
+        background-color: #E8F0FE !important;
+        border-bottom: 3px solid #1A73E8 !important;
         font-weight: 700 !important;
-        box-shadow: 0 -1px 3px rgba(60,64,67,0.08);
     }
 
-    /* Metric & KPI Cards */
+    /* Metric & Zoho Analytics Cards */
     .zoho-card {
-        background: #FFFFFF; border: 1px solid #dadce0; border-radius: 8px;
-        padding: 14px 18px; box-shadow: 0 1px 3px rgba(60,64,67,0.06); transition: all 0.2s;
+        background: #FFFFFF; border: 1px solid #DADCE0; border-radius: 8px;
+        padding: 16px 20px; box-shadow: 0 1px 3px rgba(60,64,67,0.05); transition: all 0.2s;
         box-sizing: border-box; width: 100%;
     }
-    .zoho-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(60,64,67,0.12); border-color: #1a73e8; }
-    .zoho-card-title { font-size: 11.5px; font-weight: 700; color: #5f6368; text-transform: uppercase; letter-spacing: 0.05em; }
-    .zoho-card-value { font-size: 26px; font-weight: 800; color: #202124; margin-top: 2px; line-height: 1.1; }
+    .zoho-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(60,64,67,0.12); border-color: #1A73E8; }
 
     /* Custom Status Badges */
     .status-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-    .badge-critical { background: #fce8e6; color: #c5221f; border: 1px solid #f5c2c7; }
-    .badge-warning { background: #fef7e0; color: #b06000; border: 1px solid #fbe3b5; }
-    .badge-academic { background: #e8f0fe; color: #1a73e8; border: 1px solid #c2e7ff; }
-    .badge-success { background: #e6f4ea; color: #137333; border: 1px solid #c6edd5; }
+    .badge-critical { background: #FCE8E6; color: #C5221F; border: 1px solid #F5C2C7; }
+    .badge-warning { background: #FEF7E0; color: #B06000; border: 1px solid #FBE3B5; }
+    .badge-academic { background: #E8F0FE; color: #1A73E8; border: 1px solid #C2E7FF; }
+    .badge-success { background: #E6F4EA; color: #137333; border: 1px solid #C6EDD5; }
 
     .insight-banner {
-        background-color: #ffffff; border: 1px solid #dadce0; border-left: 5px solid #1a73e8;
-        padding: 14px 18px; border-radius: 6px; font-size: 13px; color: #3c4043; line-height: 1.6;
-        margin-top: 10px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(60,64,67,0.04);
+        background-color: #FFFFFF; border: 1px solid #DADCE0; border-left: 5px solid #1A73E8;
+        padding: 16px 20px; border-radius: 6px; font-size: 13.5px; color: #3C4043; line-height: 1.6;
+        margin-top: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(60,64,67,0.04);
     }
 
     .empty-banner {
-        background: #FFFFFF; border: 2px dashed #dadce0; border-radius: 8px;
-        padding: 40px; text-align: center; color: #5f6368; margin: 20px 0;
+        background: #FFFFFF; border: 2px dashed #DADCE0; border-radius: 8px;
+        padding: 44px; text-align: center; color: #5F6368; margin: 20px 0;
     }
-    .empty-banner-title { font-size: 16px; font-weight: 700; color: #202124; margin-bottom: 4px; }
-    .empty-banner-sub { font-size: 13px; color: #70757a; }
+    .empty-banner-title { font-size: 16px; font-weight: 700; color: #202124; margin-bottom: 6px; }
+    .empty-banner-sub { font-size: 13px; color: #70757A; }
 
-    .section-lbl { font-size: 12.5px; font-weight: 800; color: #1a73e8; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px 0 6px 0; }
-    .main-section-lbl { font-size: 13px; font-weight: 800; color: #202124; text-transform: uppercase; letter-spacing: 0.04em; margin: 12px 0 8px 0; }
+    .main-section-lbl { font-size: 13px; font-weight: 800; color: #1E293B; text-transform: uppercase; letter-spacing: 0.05em; margin: 14px 0 8px 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -148,11 +152,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 PLOTLY_CONFIG = dict(
-    font=dict(family="Inter, sans-serif", color="#3c4043", size=12),
+    font=dict(family="Inter, sans-serif", color="#3C4043", size=12),
     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="#FFFFFF",
     margin=dict(l=40, r=25, t=40, b=40),
-    xaxis=dict(showgrid=True, gridcolor="#f1f3f4", linecolor="#dadce0"),
-    yaxis=dict(showgrid=True, gridcolor="#f1f3f4", linecolor="#dadce0")
+    xaxis=dict(showgrid=True, gridcolor="#F1F3F4", linecolor="#DADCE0"),
+    yaxis=dict(showgrid=True, gridcolor="#F1F3F4", linecolor="#DADCE0")
 )
 
 # ---------------------------------------------------------
@@ -184,7 +188,7 @@ def normalize_columns(df):
 # ---------------------------------------------------------
 with st.sidebar:
     st.image("https://img.icons8.com/color/96/000000/google-code.png", width=48)
-    st.markdown("<div class='section-lbl'>Institutional Governance Policy</div>", unsafe_allow_html=True)
+    st.markdown("### Governance Policy Cutoffs")
     
     att_threshold = st.slider(
         "Attendance Cutoff (%)", 50.0, 90.0, 75.0, 1.0,
@@ -332,7 +336,7 @@ def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
 # ---------------------------------------------------------
 st.markdown("<div class='main-section-lbl'>1. Data Ingestion & Sanitation Audit Console</div>", unsafe_allow_html=True)
 
-col_ingest, col_template = st.columns([3, 1])
+col_ingest, col_template = st.columns([3, 1], vertical_alignment="bottom")
 with col_ingest:
     uploaded_file = st.file_uploader(
         "Ingest Academic Data File (.csv or .xlsx)", type=["csv", "xlsx"],
@@ -566,7 +570,7 @@ with tab3:
                     fig_radar.add_trace(go.Scatterpolar(
                         r=st_records['normalized_mark_pct'].tolist() + [st_records['normalized_mark_pct'].iloc[0]],
                         theta=st_records['subject_id'].tolist() + [st_records['subject_id'].iloc[0]],
-                        fill='toself', name='Student Score', line_color='#1a73e8'
+                        fill='toself', name='Student Score', line_color='#1A73E8'
                     ))
                     fig_radar.add_trace(go.Scatterpolar(
                         r=st_records['subject_mean'].tolist() + [st_records['subject_mean'].iloc[0]],
@@ -597,7 +601,7 @@ with tab4:
             hover_data=["student_id", "student_name", "overall_mean_pct", "Academic Health Index (AHI)"],
             title="2D Cartesian Early Warning Risk Matrix (Attendance vs. Z-Score Deviation)",
             labels={"mean_attendance": "Mean Attendance (%)", "avg_z_score": "Average Z-Score (σ)"},
-            color_discrete_map={"CRITICAL RISK (Q1)": "#c5221f", "ATTENDANCE RISK (Q2)": "#b06000", "ACADEMIC RISK (Q3)": "#1a73e8", "HIGH PERFORMER (Q4)": "#137333"},
+            color_discrete_map={"CRITICAL RISK (Q1)": "#C5221F", "ATTENDANCE RISK (Q2)": "#B06000", "ACADEMIC RISK (Q3)": "#1A73E8", "HIGH PERFORMER (Q4)": "#137333"},
             height=400
         )
         fig_quad.add_vline(x=att_threshold, line_dash="dash", line_color="gray", annotation_text=f"Attendance Cutoff ({att_threshold}%)")
