@@ -6,118 +6,150 @@ import plotly.graph_objects as go
 import io
 from datetime import datetime
 
-# Page Configuration
+# ---------------------------------------------------------
+# PAGE & THEME CONFIGURATION
+# ---------------------------------------------------------
 st.set_page_config(
-    page_title="BIT Academic Performance Analytics Pipeline",
-    page_icon="📊",
+    page_title="BIT Enterprise Academic Data Quality & Statistical Analytics Platform",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Header Section
-st.title("📊 Educational Data Quality & Academic Performance Analytics Pipeline")
-st.caption("Automated Ingestion, Pydantic-Style Validation, Pearson Correlation, Z-Score Normalization, & Deterministic Risk Profiling")
+# Custom CSS for Enterprise UI
+st.markdown("""
+<style>
+    .main-header { font-size: 26px; font-weight: 700; color: #1E293B; margin-bottom: 0px; }
+    .sub-header { font-size: 14px; color: #64748B; margin-bottom: 20px; }
+    .metric-card { background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 15px; }
+    .stAlert { border-radius: 8px; }
+</style>
+""", unsafe_allow_html=True)
 
-st.markdown("---")
+st.markdown('<div class="main-header">🛡️ Academic Data Quality Governance & Analytics Engine</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Automated File Sanitation, Subject Difficulty Normalization (Z-Score), Statistical Trend Discovery & 4-Quadrant Risk Profiling</div>', unsafe_allow_html=True)
 
-# Sidebar - Template & Configuration
+# ---------------------------------------------------------
+# SIDEBAR - CONFIGURATION & TEMPLATE ENGINE
+# ---------------------------------------------------------
 with st.sidebar:
-    st.header("⚙️ Pipeline Controls")
+    st.image("https://img.icons8.com/color/96/000000/analytics.png", width=64)
+    st.header("⚙️ Engine Controls")
     
-    # Download Template Utility
-    st.subheader("1. Standard Data Contract")
-    template_df = pd.DataFrame({
-        "student_id": ["STU_001", "STU_002", "STU_003"],
-        "student_name": ["John Doe", "Jane Smith", "Alex Mercer"],
-        "subject_id": ["MATH101", "CS201", "PHY102"],
-        "attendance_percentage": [85.0, 62.5, 91.0],
-        "marks_obtained": [78.5, 42.0, 88.0],
-        "maximum_marks": [100.0, 100.0, 100.0],
-        "assessment_date": ["2026-09-15", "2026-09-15", "2026-09-15"]
+    st.subheader("1. Ingestion Template")
+    template_data = pd.DataFrame({
+        "student_id": ["STU_101", "STU_102", "STU_103", "STU_104"],
+        "student_name": ["Alice Smith", "Bob Jones", "Charlie Brown", "Diana Prince"],
+        "subject_id": ["MATH101", "CS201", "MATH101", "CS201"],
+        "attendance_percentage": [88.5, 64.0, 92.0, 55.0],
+        "marks_obtained": [82.0, 45.0, 95.0, 38.0],
+        "maximum_marks": [100.0, 100.0, 100.0, 100.0],
+        "academic_semester": ["SEM_07", "SEM_07", "SEM_07", "SEM_07"]
     })
     
-    buffer = io.BytesIO()
-    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-        template_df.to_excel(writer, index=False, sheet_name='Template')
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+        template_data.to_excel(writer, index=False, sheet_name='Data_Contract')
     
     st.download_button(
-        label="📥 Download Excel Ingestion Template",
-        data=buffer.getvalue(),
-        file_name="student_ingestion_template.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        label="📥 Download Excel Schema Template",
+        data=buf.getvalue(),
+        file_name="academic_ingestion_contract_template.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
     )
     
     st.markdown("---")
-    st.subheader("2. Threshold Rules")
-    attendance_cutoff = st.slider("Min Attendance Threshold (%)", 50.0, 90.0, 75.0, step=1.0)
-    
-# Main Upload Area
-uploaded_file = st.file_uploader("Upload Raw Student Academic Dataset (.csv or .xlsx)", type=["csv", "xlsx"])
+    st.subheader("2. Threshold Governance")
+    att_threshold = st.slider("Min Attendance Cutoff (%)", 50.0, 90.0, 75.0, 1.0)
+    z_risk_threshold = st.slider("Critical Z-Score Cutoff (\u03c3)", -2.0, 0.0, -0.5, 0.1)
+
+# ---------------------------------------------------------
+# HELPER FUNCTIONS: DYNAMIC COLUMN ALIASING & SANITATION
+# ---------------------------------------------------------
+ALIAS_MAP = {
+    'student_id': ['student_id', 'roll_no', 'register_no', 'usn', 'id', 'student_code'],
+    'student_name': ['student_name', 'name', 'full_name', 'candidate_name'],
+    'subject_id': ['subject_id', 'subject_code', 'course_id', 'subject'],
+    'attendance_percentage': ['attendance_percentage', 'attendance', 'attendance_pct', 'att_%', 'att'],
+    'marks_obtained': ['marks_obtained', 'marks', 'score', 'obtained_marks', 'total_marks'],
+    'maximum_marks': ['maximum_marks', 'max_marks', 'total_possible', 'max']
+}
+
+def normalize_columns(df):
+    renamed = {}
+    cols_lower = {col.strip().lower(): col for col in df.columns}
+    for target, aliases in ALIAS_MAP.items():
+        for alias in aliases:
+            if alias in cols_lower:
+                renamed[cols_lower[alias]] = target
+                break
+    return df.rename(columns=renamed)
+
+# ---------------------------------------------------------
+# STAGE 1: INGESTION & PIPELINE EXECUTION
+# ---------------------------------------------------------
+uploaded_file = st.file_uploader("Upload Academic Batch Dataset (.csv or .xlsx)", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
-    # ---------------------------------------------------------
-    # STAGE 1: INGESTION & DATA SANITATION
-    # ---------------------------------------------------------
     try:
         if uploaded_file.name.endswith('.csv'):
             raw_df = pd.read_csv(uploaded_file)
         else:
             raw_df = pd.read_excel(uploaded_file)
     except Exception as e:
-        st.error(f"File Read Error: {e}")
+        st.error(f"Critical Ingestion Error: {e}")
         st.stop()
         
-    st.success(f"Successfully ingested `{uploaded_file.name}` containing {len(raw_df)} total records.")
+    raw_df = normalize_columns(raw_df)
     
-    # Header Normalization
-    raw_df.columns = raw_df.columns.str.strip().str.lower()
+    # Required Fields Verification
+    required_keys = {'student_id', 'subject_id', 'attendance_percentage', 'marks_obtained'}
+    missing = required_keys - set(raw_df.columns)
     
-    clean_records = []
-    audit_logs = []
-    
-    required_cols = {'student_id', 'subject_id', 'attendance_percentage', 'marks_obtained', 'maximum_marks'}
-    missing_cols = required_cols - set(raw_df.columns)
-    
-    if missing_cols:
-        st.error(f"Data Contract Violation: Missing required columns: {missing_cols}")
+    if missing:
+        st.error(f"❌ Data Contract Violation: Could not resolve required fields: {list(missing)}. Please use the standard template.")
         st.stop()
+        
+    if 'maximum_marks' not in raw_df.columns:
+        raw_df['maximum_marks'] = 100.0
+        
+    if 'student_name' not in raw_df.columns:
+        raw_df['student_name'] = raw_df['student_id']
 
-    # Rule-Based Cleaning & Validation Engine
+    # Rule-Based Cleansing Engine
+    clean_rows = []
+    audit_entries = []
+    
     for idx, row in raw_df.iterrows():
-        row_num = idx + 2  # Account for header
+        r_num = idx + 2
         s_id = str(row.get('student_id', '')).strip()
         sub_id = str(row.get('subject_id', '')).strip()
         s_name = str(row.get('student_name', s_id)).strip()
         
+        reasons = []
+        
+        # Check Null Keys
+        if not s_id or s_id == 'nan':
+            reasons.append("Missing Student Identifier")
+        if not sub_id or sub_id == 'nan':
+            reasons.append("Missing Subject Identifier")
+            
         try:
             att = float(row.get('attendance_percentage', -1))
             marks = float(row.get('marks_obtained', -1))
             max_m = float(row.get('maximum_marks', 100.0))
             
-            # Validation Rules
-            rejections = []
-            if not s_id or s_id == 'nan':
-                rejections.append("Missing Student ID")
-            if not sub_id or sub_id == 'nan':
-                rejections.append("Missing Subject ID")
             if att < 0.0 or att > 100.0:
-                rejections.append(f"Attendance out of range [0-100%]: {att}%")
+                reasons.append(f"Attendance out of range [0-100%]: {att}%")
             if marks < 0.0:
-                rejections.append(f"Negative marks detected: {marks}")
+                reasons.append(f"Negative mark value detected: {marks}")
             if marks > max_m:
-                rejections.append(f"Marks ({marks}) exceed maximum limit ({max_m})")
+                reasons.append(f"Marks ({marks}) exceed maximum limit ({max_m})")
                 
-            if rejections:
-                audit_logs.append({
-                    "Row Number": row_num,
-                    "Student ID": s_id,
-                    "Subject ID": sub_id,
-                    "Rejection Reason": " | ".join(rejections),
-                    "Raw Data": str(row.to_dict())
-                })
-            else:
+            if not reasons:
                 pct_mark = (marks / max_m) * 100.0
-                clean_records.append({
+                clean_rows.append({
                     "student_id": s_id,
                     "student_name": s_name,
                     "subject_id": sub_id,
@@ -126,47 +158,49 @@ if uploaded_file is not None:
                     "maximum_marks": max_m,
                     "normalized_mark_pct": pct_mark
                 })
-        except Exception as err:
-            audit_logs.append({
-                "Row Number": row_num,
+        except ValueError:
+            reasons.append("Non-numeric data in numeric attendance/marks field")
+            
+        if reasons:
+            audit_entries.append({
+                "Row Number": r_num,
                 "Student ID": s_id,
                 "Subject ID": sub_id,
-                "Rejection Reason": f"Type Casting Error: {str(err)}",
-                "Raw Data": str(row.to_dict())
+                "Rejection Reason": " | ".join(reasons),
+                "Raw Record Payload": str(row.to_dict())
             })
-            
-    clean_df = pd.DataFrame(clean_records)
-    audit_df = pd.DataFrame(audit_logs)
-    
-    # Deduplication Step on Clean Records
-    if not clean_df.empty:
-        initial_clean_len = len(clean_df)
-        clean_df = clean_df.drop_duplicates(subset=['student_id', 'subject_id'], keep='first')
-        dedup_dropped = initial_clean_len - len(clean_df)
-        if dedup_dropped > 0:
-            st.warning(f"Detected and removed {dedup_dropped} duplicate records for identical (Student, Subject) pairs.")
 
-    # Data Health Score
+    clean_df = pd.DataFrame(clean_rows)
+    audit_df = pd.DataFrame(audit_entries)
+    
+    # Deduplication Check
+    if not clean_df.empty:
+        before_dedup = len(clean_df)
+        clean_df = clean_df.drop_duplicates(subset=['student_id', 'subject_id'], keep='first')
+        dedup_count = before_dedup - len(clean_df)
+        if dedup_count > 0:
+            st.warning(f"⚠️ Deduplication Engine: Identified and isolated {dedup_count} duplicate entries for identical (Student, Subject) combinations.")
+
+    # Data Health Metrics
     total_received = len(raw_df)
     clean_count = len(clean_df)
     flagged_count = len(audit_df)
     health_score = round((clean_count / total_received) * 100, 2) if total_received > 0 else 0.0
 
     # ---------------------------------------------------------
-    # STAGE 2: DATA HEALTH & AUDIT DISPLAY
+    # STAGE 2: PIPELINE QUALITY AUDIT & CONSOLE
     # ---------------------------------------------------------
-    st.subheader("📋 Pipeline Sanitation & Health Audit")
+    st.markdown("### 1. Data Sanitation & Health Audit Console")
     
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Records Ingested", total_received)
-    col2.metric("Clean Records Persisted", clean_count)
-    col3.metric("Flagged / Rejected", flagged_count)
-    col4.metric("Data Health Score", f"{health_score}%")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total Records Ingested", total_received)
+    c2.metric("Clean Records Persisted", clean_count)
+    c3.metric("Anomalies Isolated", flagged_count)
+    c4.metric("Data Health Score", f"{health_score}%")
     
     if not audit_df.empty:
-        with st.expander("⚠️ View Audit Log (Rejected Anomalous Records)", expanded=True):
+        with st.expander("🚨 View Isolated Anomaly Audit Trail (Click to Expand)", expanded=True):
             st.dataframe(audit_df[['Row Number', 'Student ID', 'Subject ID', 'Rejection Reason']], use_container_width=True)
-            
             audit_csv = audit_df.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label="📥 Export Audit Log (.CSV)",
@@ -176,42 +210,60 @@ if uploaded_file is not None:
             )
 
     if clean_df.empty:
-        st.error("No valid clean records available for analytics. Please upload a corrected dataset.")
+        st.error("❌ No clean records survived sanitation. Review the audit log above and re-upload a valid file.")
         st.stop()
 
     # ---------------------------------------------------------
     # STAGE 3: STATISTICAL ANALYTICS & Z-SCORE NORMALIZATION
     # ---------------------------------------------------------
     st.markdown("---")
-    st.subheader("📐 Statistical Analytics & Difficulty Normalization")
+    st.markdown("### 2. Statistical Analytics & Difficulty Normalization")
     
-    # Calculate Subject Level Metrics
-    subject_stats = clean_df.groupby('subject_id').agg(
+    # Subject Aggregations (Mean, Std Dev, Difficulty Index)
+    subject_summary = clean_df.groupby('subject_id').agg(
         subject_mean=('normalized_mark_pct', 'mean'),
         subject_std=('normalized_mark_pct', 'std'),
         avg_attendance=('attendance_percentage', 'mean'),
         student_count=('student_id', 'nunique')
     ).reset_index()
     
-    subject_stats['subject_std'] = subject_stats['subject_std'].fillna(0.0)
+    subject_summary['subject_std'] = subject_summary['subject_std'].fillna(0.0)
+    subject_summary['Subject Difficulty Index (SDI)'] = (100.0 - subject_summary['subject_mean']).round(2)
     
-    # Merge Subject Means back to calculate Z-Score
-    clean_df = clean_df.merge(subject_stats[['subject_id', 'subject_mean', 'subject_std']], on='subject_id', how='left')
+    # Compute Z-Scores: Z = (Mark - Mean) / Std Dev
+    clean_df = clean_df.merge(subject_summary[['subject_id', 'subject_mean', 'subject_std']], on='subject_id', how='left')
     
-    # Z-Score Calculation: Z = (Mark % - Subject Mean) / Subject Std Dev
     clean_df['z_score'] = np.where(
         clean_df['subject_std'] > 0,
         (clean_df['normalized_mark_pct'] - clean_df['subject_mean']) / clean_df['subject_std'],
         0.0
     )
 
-    # Calculate Pearson Correlation (Attendance vs Marks)
-    overall_corr = clean_df['attendance_percentage'].corr(clean_df['normalized_mark_pct'], method='pearson')
+    # Pearson Correlation (r) & OLS Regression (R^2)
+    x = clean_df['attendance_percentage'].values
+    y = clean_df['normalized_mark_pct'].values
     
-    st.info(f"**Pearson Correlation Coefficient ($r$):** `{overall_corr:+.4f}` — " + 
-            ("Strong Positive Relationship" if overall_corr > 0.6 else "Moderate Relationship" if overall_corr > 0.3 else "Weak / No Linear Relationship"))
+    r_val = clean_df['attendance_percentage'].corr(clean_df['normalized_mark_pct'], method='pearson')
+    
+    if len(clean_df) > 1 and np.std(x) > 0:
+        slope, intercept = np.polyfit(x, y, 1)
+        y_pred = slope * x + intercept
+        ss_tot = np.sum((y - np.mean(y))**2)
+        ss_res = np.sum((y - y_pred)**2)
+        r_squared = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
+    else:
+        slope, intercept, r_squared = 0.0, 0.0, 0.0
 
-    tab1, tab2 = st.tabs(["📈 Attendance vs Performance Regression", "📊 Subject Difficulty (Z-Scores)"])
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Pearson Correlation Coefficient (r)", f"{r_val:+.4f}")
+    m2.metric("OLS Linear Slope (m)", f"{slope:+.4f} marks / % att")
+    m3.metric("Coefficient of Determination (R²)", f"{r_squared:.4f}")
+
+    tab1, tab2, tab3 = st.tabs([
+        "📈 Bivariate Regression & Scatter", 
+        "📊 Subject Difficulty & Variance (Z-Scores)", 
+        "📋 Subject Metrics Summary Table"
+    ])
     
     with tab1:
         fig_scatter = px.scatter(
@@ -221,7 +273,7 @@ if uploaded_file is not None:
             color="subject_id",
             hover_data=["student_id", "student_name", "z_score"],
             trendline="ols",
-            title="Pearson Bivariate Correlation & Trend Discovery",
+            title=f"Attendance vs. Normalized Marks (OLS Line: y = {slope:.2f}x + {intercept:.2f}, R² = {r_squared:.3f})",
             labels={"attendance_percentage": "Attendance Percentage (%)", "normalized_mark_pct": "Normalized Mark (%)"}
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
@@ -232,77 +284,100 @@ if uploaded_file is not None:
             x="subject_id",
             y="normalized_mark_pct",
             points="all",
-            title="Subject Mark Distribution & Difficulty Variation",
-            labels={"subject_id": "Subject Code", "normalized_mark_pct": "Mark Percentage (%)"}
+            color="subject_id",
+            title="Raw Performance Distribution Across Subjects (Identifying Grading Strictness)",
+            labels={"subject_id": "Subject Code", "normalized_mark_pct": "Normalized Score (%)"}
         )
         st.plotly_chart(fig_box, use_container_width=True)
+        
+    with tab3:
+        st.dataframe(
+            subject_summary.style.format({
+                "subject_mean": "{:.2f}%",
+                "subject_std": "{:.2f}",
+                "avg_attendance": "{:.1f}%",
+                "Subject Difficulty Index (SDI)": "{:.2f}"
+            }),
+            use_container_width=True
+        )
 
     # ---------------------------------------------------------
-    # STAGE 4: ACTION MATRIX & RISK CLASSIFICATION
+    # STAGE 4: 4-QUADRANT ACTION MATRIX & RISK SEGMENTATION
     # ---------------------------------------------------------
     st.markdown("---")
-    st.subheader("🎯 Deterministic At-Risk Action Matrix")
+    st.markdown("### 3. 4-Quadrant Institutional Risk Matrix")
     
-    # Student Aggregations
-    student_summary = clean_df.groupby(['student_id', 'student_name']).agg(
+    # Student Level Aggregation
+    student_matrix = clean_df.groupby(['student_id', 'student_name']).agg(
         mean_attendance=('attendance_percentage', 'mean'),
         overall_mean_pct=('normalized_mark_pct', 'mean'),
         avg_z_score=('z_score', 'mean')
     ).reset_index()
     
-    # Overall Batch Average
-    batch_avg_mark = student_summary['overall_mean_pct'].mean()
-    
-    def classify_risk(row):
-        att_low = row['mean_attendance'] < attendance_cutoff
-        marks_low = row['overall_mean_pct'] < batch_avg_mark
+    def classify_quadrant(row):
+        att_low = row['mean_attendance'] < att_threshold
+        z_low = row['avg_z_score'] < z_risk_threshold
         
-        if att_low and marks_low:
-            return "CRITICAL"
-        elif att_low:
-            return "ATTENDANCE RISK"
-        elif marks_low:
-            return "ACADEMIC RISK"
-        return "ON TRACK"
+        if att_low and z_low:
+            return "CRITICAL RISK (Q1)"
+        elif att_low and not z_low:
+            return "ATTENDANCE RISK (Q2)"
+        elif not att_low and z_low:
+            return "ACADEMIC RISK (Q3)"
+        return "HIGH PERFORMER (Q4)"
 
-    student_summary['Risk Category'] = student_summary.apply(classify_risk, axis=1)
+    student_matrix['Risk Quadrant'] = student_matrix.apply(classify_quadrant, axis=1)
     
-    def recommend_action(risk):
-        if risk == "CRITICAL":
-            return "Schedule Mandatory Faculty Counseling & Send Parent Alert"
-        elif risk == "ATTENDANCE RISK":
+    def get_action(quadrant):
+        if quadrant == "CRITICAL RISK (Q1)":
+            return "Schedule Mandatory Faculty Counseling & Notify Parents"
+        elif quadrant == "ATTENDANCE RISK (Q2)":
             return "Issue Official Low Attendance Warning Letter"
-        elif risk == "ACADEMIC RISK":
-            return "Assign Peer Tutor & Remedial Session"
-        return "Regular Monitoring"
+        elif quadrant == "ACADEMIC RISK (Q3)":
+            return "Assign Remedial Peer Tutor & Subject Workshops"
+        return "Regular Monitoring & Honor Roll Recognition"
 
-    student_summary['Recommended Action'] = student_summary['Risk Category'].apply(recommend_action)
+    student_matrix['Recommended Administrative Action'] = student_matrix['Risk Quadrant'].apply(get_action)
     
-    # Filter Tabs
-    risk_filter = st.radio("Filter Student List by Risk Level:", ["ALL", "CRITICAL", "ATTENDANCE RISK", "ACADEMIC RISK", "ON TRACK"], horizontal=True)
+    # 4-Quadrant Scatter Plot
+    fig_quad = px.scatter(
+        student_matrix,
+        x="mean_attendance",
+        y="avg_z_score",
+        color="Risk Quadrant",
+        hover_data=["student_id", "student_name", "overall_mean_pct"],
+        title="2D Cartesian Risk Matrix (Attendance vs Z-Score Deviation)",
+        labels={"mean_attendance": "Mean Attendance (%)", "avg_z_score": "Average Z-Score (\u03c3)"},
+        color_discrete_map={
+            "CRITICAL RISK (Q1)": "#EF4444",
+            "ATTENDANCE RISK (Q2)": "#F59E0B",
+            "ACADEMIC RISK (Q3)": "#3B82F6",
+            "HIGH PERFORMER (Q4)": "#10B981"
+        }
+    )
+    fig_quad.add_vline(x=att_threshold, line_dash="dash", line_color="gray", annotation_text="Attendance Threshold")
+    fig_quad.add_hline(y=z_risk_threshold, line_dash="dash", line_color="gray", annotation_text="Z-Score Threshold")
     
-    if risk_filter != "ALL":
-        display_students = student_summary[student_summary['Risk Category'] == risk_filter]
-    else:
-        display_students = student_summary
-        
+    st.plotly_chart(fig_quad, use_container_width=True)
+    
+    # Table Filter & Download
     st.dataframe(
-        display_students.style.format({
+        student_matrix.style.format({
             "mean_attendance": "{:.1f}%",
             "overall_mean_pct": "{:.2f}%",
-            "avg_z_score": "{:+.2f}"
+            "avg_z_score": "{:+.2f} \u03c3"
         }),
         use_container_width=True
     )
     
-    # Export Actions
-    action_csv = student_summary.to_csv(index=False).encode('utf-8')
+    action_csv = student_matrix.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="📥 Export At-Risk Action Matrix (.CSV)",
+        label="📥 Export Intervention Matrix (.CSV)",
         data=action_csv,
-        file_name=f"at_risk_action_matrix_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv"
+        file_name=f"at_risk_interventions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        mime="text/csv",
+        use_container_width=True
     )
 
 else:
-    st.info("👆 Please upload a `.csv` or `.xlsx` file using the box above to trigger the pipeline.")
+    st.info("💡 Upload an academic batch file (`.csv` or `.xlsx`) using the file uploader above to trigger the pipeline.")
