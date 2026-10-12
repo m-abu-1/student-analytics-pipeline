@@ -17,15 +17,19 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Initialize Session State for Data Persistence
+if "raw_df" not in st.session_state:
+    st.session_state["raw_df"] = None
+
 # Global Empty State Placeholder HTML
 EMPTY_BANNER_HTML = """
 <div class="empty-banner">
     <div class="empty-banner-title">Awaiting Institutional Data Ingestion Stream</div>
-    <div class="empty-banner-sub">Please upload an academic batch dataset (.csv or .xlsx) in the ingestion console above to compute statistical models, outcome attainment matrices, and financial retention forecasts.</div>
+    <div class="empty-banner-sub">Please upload an academic batch dataset (.csv or .xlsx) or click <strong>'Load Demo Data'</strong> above to compute statistical models, outcome attainment matrices, and financial retention forecasts.</div>
 </div>
 """
 
-# Custom High-Density CSS Architecture (Google Cloud & Zoho Analytics Enterprise Theme)
+# Custom High-Density CSS Architecture
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -147,7 +151,7 @@ PLOTLY_CONFIG = dict(
 )
 
 # ---------------------------------------------------------
-# 2. SCHEMA NORMALIZATION & DYNAMIC ALIASING
+# 2. SCHEMA NORMALIZATION & DEMO GENERATOR
 # ---------------------------------------------------------
 ALIAS_MAP = {
     'student_id': ['student_id', 'roll_no', 'register_no', 'usn', 'id', 'student_code'],
@@ -169,6 +173,27 @@ def normalize_columns(df):
                 renamed[cols_lower[alias]] = target
                 break
     return df.rename(columns=renamed)
+
+def generate_demo_dataset():
+    np.random.seed(42)
+    students = [f"BIT26CS{i:03d}" for i in range(1, 201)]
+    names = [f"Student_{i}" for i in range(1, 201)]
+    subjects = ["MA3151_Maths", "CS3351_DPCO", "CS3352_DataStructures", "CS3391_OOP", "GE3351_Environmental", "EC3351_Signals"]
+    
+    rows = []
+    for s_id, name in zip(students, names):
+        base_att = np.random.uniform(55, 98)
+        base_mark = base_att * 0.7 + np.random.normal(15, 12)
+        
+        for sub in subjects:
+            att = np.clip(base_att + np.random.normal(0, 4), 40, 100)
+            marks = np.clip(base_mark + np.random.normal(0, 10), 20, 100)
+            rows.append({
+                "student_id": s_id, "student_name": name, "department": "CSE",
+                "subject_id": sub, "attendance_percentage": round(att, 1),
+                "marks_obtained": round(marks, 1), "maximum_marks": 100, "academic_semester": "SEM_05"
+            })
+    return pd.DataFrame(rows)
 
 # ---------------------------------------------------------
 # 3. SIDEBAR INSTITUTIONAL POLICY CONTROLS
@@ -192,11 +217,16 @@ with st.sidebar:
         key="sidebar_tuition_fee",
         help="Annual departmental tuition fee per student used to calculate total financial tuition revenue exposure."
     )
+    
+    if st.session_state["raw_df"] is not None:
+        st.markdown("---")
+        if st.button("Clear Uploaded Dataset", key="btn_clear_data", use_container_width=True):
+            st.session_state["raw_df"] = None
+            st.rerun()
 
 # ---------------------------------------------------------
-# 4. STATISTICAL & CALCULATIVE PIPELINE (CACHED)
+# 4. STATISTICAL & CALCULATIVE PIPELINE (REAL-TIME REACTIVE)
 # ---------------------------------------------------------
-@st.cache_data(show_spinner=False)
 def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
     df = normalize_columns(df_raw)
     
@@ -309,7 +339,7 @@ def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
         (student_matrix['overall_mean_pct'] * 0.60) + (student_matrix['mean_attendance'] * 0.40)
     ).round(2)
 
-    # Risk Quadrant Classification
+    # Risk Quadrant Classification (Dynamically Driven by Sidebar Sliders)
     def classify_quadrant(row):
         att_low = row['mean_attendance'] < att_thresh
         z_low = row['avg_z_score'] < z_thresh
@@ -323,7 +353,7 @@ def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
     return clean_df, audit_df, subject_summary, student_matrix, None
 
 # ---------------------------------------------------------
-# 5. INGESTION CONSOLE
+# 5. INGESTION CONSOLE & SESSION PERSISTENCE
 # ---------------------------------------------------------
 st.markdown("<div class='main-section-lbl'>1. Data Ingestion & Sanitation Audit Console</div>", unsafe_allow_html=True)
 
@@ -334,23 +364,32 @@ with col_ingest:
         key="main_data_file_uploader",
         help="Upload raw academic dataset containing student marks, attendance, and subject details."
     )
+    if uploaded_file is not None:
+        st.session_state["raw_df"] = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
 
 with col_template:
-    st.markdown("**Contract Schema**")
-    template_data = pd.DataFrame({
-        "student_id": ["BIT26CS001"], "student_name": ["Aarav Sharma"], "department": ["CSE"],
-        "subject_id": ["MA3151_Maths"], "attendance_percentage": [88.5],
-        "marks_obtained": [82.0], "maximum_marks": [100.0], "academic_semester": ["SEM_05"]
-    })
-    buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
-        template_data.to_excel(writer, index=False, sheet_name='Data_Contract')
-    st.download_button("Download Schema Contract (.xlsx)", data=buf.getvalue(), file_name="academic_schema_contract.xlsx", key="dl_contract_schema", use_container_width=True)
+    st.markdown("**Actions & Schema Contract**")
+    btn_col1, btn_col2 = st.columns(2)
+    with btn_col1:
+        if st.button("Load Demo Data", key="btn_load_demo", use_container_width=True):
+            st.session_state["raw_df"] = generate_demo_dataset()
+            st.rerun()
+            
+    with btn_col2:
+        template_data = pd.DataFrame({
+            "student_id": ["BIT26CS001"], "student_name": ["Aarav Sharma"], "department": ["CSE"],
+            "subject_id": ["MA3151_Maths"], "attendance_percentage": [88.5],
+            "marks_obtained": [82.0], "maximum_marks": [100.0], "academic_semester": ["SEM_05"]
+        })
+        buf = io.BytesIO()
+        with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+            template_data.to_excel(writer, index=False, sheet_name='Data_Contract')
+        st.download_button("Schema Contract (.xlsx)", data=buf.getvalue(), file_name="academic_schema_contract.xlsx", key="dl_contract_schema", use_container_width=True)
 
 clean_df, audit_df, subject_summary, student_matrix = None, None, None, None
 
-if uploaded_file is not None:
-    raw_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+if st.session_state["raw_df"] is not None:
+    raw_df = st.session_state["raw_df"]
     clean_df, audit_df, subject_summary, student_matrix, missing = run_analytics_pipeline(raw_df, att_threshold, z_risk_threshold)
     
     if missing:
@@ -363,7 +402,7 @@ if uploaded_file is not None:
     health_score = round((clean_count / total_received) * 100, 2) if total_received > 0 else 0.0
 
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Records Ingested", total_received, help="Total raw row count received from uploaded file.")
+    k1.metric("Records Ingested", total_received, help="Total raw row count received.")
     k2.metric("Clean Records Persisted", clean_count, help="Validated non-duplicate records in active processing pipeline.")
     k3.metric("Anomalies Isolated", flagged_count, delta=f"{flagged_count} Rejections", delta_color="inverse", help="Records rejected due to missing fields or out-of-bounds values.")
     k4.metric("Data Health Score", f"{health_score}%", delta="NAAC Ready" if health_score >= 90 else "Action Required", delta_color="normal" if health_score >= 90 else "inverse", help="Percentage of clean records. NAAC/NBA target >= 90%.")
@@ -446,9 +485,9 @@ with tab1:
 
         with col_stats:
             st.markdown("##### Statistical Parameters")
-            st.metric("Pearson Correlation (r)", r_str, help="Linear relationship strength (-1.0 to +1.0).")
-            st.metric("Marginal Performance Yield (m)", f"{slope_str} marks / % att", help="Expected score change per 1% attendance shift.")
-            st.metric("Attendance Determinacy (R²)", r2_str, help="Variance in score explained by attendance alone.")
+            st.metric("Pearson Correlation (r)", r_str)
+            st.metric("Marginal Performance Yield (m)", f"{slope_str} marks / % att")
+            st.metric("Attendance Determinacy (R²)", r2_str)
 
             with st.popover("Methodology & Business Context"):
                 st.markdown("""
@@ -550,7 +589,7 @@ with tab3:
         if selected_quadrant != "ALL":
             filtered_students = filtered_students[filtered_students['Risk Quadrant'] == selected_quadrant]
 
-        st.markdown(f"Displaying **{len(filtered_students)} of {total_students} Student Profiles**:")
+        st.markdown(f"Displaying **{len(filtered_students)} of {total_students} Student Profiles** (Refreshed Live with Sidebar Cutoffs):")
         
         card_cols = st.columns(2)
         for idx, (_, stu) in enumerate(filtered_students.iterrows()):
@@ -598,7 +637,7 @@ with tab3:
         st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# TAB 4: 2D EARLY WARNING RISK MATRIX
+# TAB 4: 2D EARLY WARNING RISK MATRIX (REAL-TIME CUTOFFS)
 # ---------------------------------------------------------
 with tab4:
     if clean_df is not None and not clean_df.empty:
@@ -613,7 +652,7 @@ with tab4:
         fig_quad = px.scatter(
             student_matrix, x="mean_attendance", y="avg_z_score", color="Risk Quadrant",
             hover_data=["student_id", "student_name", "overall_mean_pct", "Academic Health Index (AHI)"],
-            title="2D Cartesian Early Warning Risk Matrix (Attendance vs. Z-Score Deviation)",
+            title=f"2D Cartesian Early Warning Risk Matrix (Attendance Cutoff = {att_threshold}%, Z-Score Cutoff = {z_risk_threshold:.2f}σ)",
             labels={"mean_attendance": "Mean Attendance (%)", "avg_z_score": "Average Z-Score (σ)"},
             color_discrete_map={"CRITICAL RISK (Q1)": "#C5221F", "ATTENDANCE RISK (Q2)": "#B06000", "ACADEMIC RISK (Q3)": "#1A73E8", "HIGH PERFORMER (Q4)": "#137333"},
             height=400
@@ -654,7 +693,7 @@ with tab4:
         st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# TAB 5: LOCAL AI ACADEMIC ASSISTANT (BUG-FIXED PARSER)
+# TAB 5: LOCAL AI ACADEMIC ASSISTANT
 # ---------------------------------------------------------
 with tab5:
     if clean_df is not None and not clean_df.empty:
@@ -676,7 +715,6 @@ with tab5:
             q_lower = prompt.lower()
             response = ""
 
-            # Explicit intent flags to prevent keyword collisions
             is_dropout_or_poor = any(w in q_lower for w in [
                 "drop", "dropout", "dropped", "poor", "poorest", "worst", "fail", "failing", 
                 "bottom", "low mark", "struggle", "struggling", "critical", "q1", "risk", "at-risk", "at risk"
@@ -688,7 +726,6 @@ with tab5:
 
             is_subject_query = any(w in q_lower for w in ["hardest", "difficult", "sdi", "subject", "course", "tough"])
 
-            # 1. ATTRITION / POOREST / DROPOUT INTENT
             if is_dropout_or_poor:
                 crit_df = student_matrix[student_matrix['Risk Quadrant'] == "CRITICAL RISK (Q1)"]
                 
@@ -696,7 +733,6 @@ with tab5:
                     names = ", ".join([f"**{row['student_name']}** ({row['student_id']})" for _, row in crit_df.iterrows()])
                     response = f"There are **{len(crit_df)} students** in **Critical Risk (Q1)** requiring immediate intervention:\n\n{names}\n\n*Recommended Action:* Scheduled for mandatory faculty counseling & parent intimation."
                 else:
-                    # Sort ascending by Academic Health Index (AHI) to return poorest performers
                     bottom_df = student_matrix.sort_values('Academic Health Index (AHI)', ascending=True).head(5)
                     bottom_list = "\n".join([
                         f"{idx+1}. **{row['student_name']}** ({row['student_id']}) — Score: **{row['overall_mean_pct']:.1f}%**, Att: **{row['mean_attendance']:.1f}%**, AHI: **{row['Academic Health Index (AHI)']} / 100** [{row['Risk Quadrant']}]"
@@ -704,7 +740,6 @@ with tab5:
                     ])
                     response = f"Here are the **5 lowest performing students** (ranked by Academic Health Index):\n\n{bottom_list}\n\n*Recommended Action:* High dropout risk — issue formal academic intimation letters immediately."
 
-            # 2. TOP PERFORMERS INTENT
             elif is_top_or_best:
                 top_df = student_matrix.sort_values('overall_mean_pct', ascending=False).head(5)
                 top_list = "\n".join([
@@ -713,17 +748,14 @@ with tab5:
                 ])
                 response = f"Here are the **top 5 high-performing students** by overall academic score:\n\n{top_list}"
 
-            # 3. SUBJECT DIFFICULTY INTENT
             elif is_subject_query:
                 hardest = subject_summary.sort_values('Subject Difficulty Index (SDI)', ascending=False).iloc[0]
                 response = f"The hardest course is **{hardest['subject_id']}** with a Subject Difficulty Index (SDI) of **{hardest['Subject Difficulty Index (SDI)']:.1f}** and an average class mark of **{hardest['subject_mean']:.1f}%**."
 
-            # 4. ATTENDANCE DISCIPLINE INTENT
             elif is_attendance_query:
                 low_att = student_matrix[student_matrix['mean_attendance'] < att_threshold]
                 response = f"There are **{len(low_att)} students** below the mandatory attendance threshold of **{att_threshold}%**."
 
-            # 5. GENERAL SUMMARY FALLBACK
             else:
                 batch_avg = clean_df['normalized_mark_pct'].mean()
                 batch_att = clean_df['attendance_percentage'].mean()
