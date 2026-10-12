@@ -403,7 +403,6 @@ with tab1:
 
         col_viz, col_stats = st.columns([2.2, 1])
         
-        # Robust Data Sanitization for Regression (Prevents NaN Outputs)
         x_raw = clean_df['attendance_percentage'].to_numpy(dtype=float)
         y_raw = clean_df['normalized_mark_pct'].to_numpy(dtype=float)
         mask = np.isfinite(x_raw) & np.isfinite(y_raw)
@@ -589,7 +588,6 @@ with tab3:
                             polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
                             height=250, margin=dict(l=20, r=20, t=20, b=20)
                         )
-                        # Explicit key parameter prevents StreamlitDuplicateElementId crash inside loop
                         st.plotly_chart(
                             fig_radar,
                             use_container_width=True,
@@ -656,12 +654,12 @@ with tab4:
         st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# TAB 5: LOCAL AI ACADEMIC ASSISTANT
+# TAB 5: LOCAL AI ACADEMIC ASSISTANT (BUG-FIXED PARSER)
 # ---------------------------------------------------------
 with tab5:
     if clean_df is not None and not clean_df.empty:
         st.markdown("##### AI Academic Query Assistant")
-        st.caption("Ask questions about student attendance, risk levels, subject difficulty, or top performers in plain English.")
+        st.caption("Ask questions about student attendance, risk levels, subject difficulty, or top/bottom performers in plain English.")
         
         if "messages" not in st.session_state:
             st.session_state.messages = [
@@ -675,35 +673,62 @@ with tab5:
             st.session_state.messages.append({"role": "user", "content": prompt})
             st.chat_message("user").write(prompt)
             
-            query_lower = prompt.lower()
+            q_lower = prompt.lower()
             response = ""
-            
-            if "critical" in query_lower or "q1" in query_lower or "risk" in query_lower:
+
+            # Explicit intent flags to prevent keyword collisions
+            is_dropout_or_poor = any(w in q_lower for w in [
+                "drop", "dropout", "dropped", "poor", "poorest", "worst", "fail", "failing", 
+                "bottom", "low mark", "struggle", "struggling", "critical", "q1", "risk", "at-risk", "at risk"
+            ])
+
+            is_top_or_best = any(w in q_lower for w in ["top", "best", "highest", "topper", "rank", "merit", "excel"]) and not is_dropout_or_poor
+
+            is_attendance_query = any(w in q_lower for w in ["attendance", "detain", "detained", "shortage", "absent", "q2"]) and not is_top_or_best and not is_dropout_or_poor
+
+            is_subject_query = any(w in q_lower for w in ["hardest", "difficult", "sdi", "subject", "course", "tough"])
+
+            # 1. ATTRITION / POOREST / DROPOUT INTENT
+            if is_dropout_or_poor:
                 crit_df = student_matrix[student_matrix['Risk Quadrant'] == "CRITICAL RISK (Q1)"]
-                if not crit_df.empty:
+                
+                if not crit_df.empty and ("q1" in q_lower or "critical" in q_lower or "counseling" in q_lower):
                     names = ", ".join([f"**{row['student_name']}** ({row['student_id']})" for _, row in crit_df.iterrows()])
-                    response = f"There are **{len(crit_df)} students** in Critical Risk (Q1):\n\n{names}\n\n*Recommended Action:* Scheduled for mandatory faculty counseling & parent intimation."
+                    response = f"There are **{len(crit_df)} students** in **Critical Risk (Q1)** requiring immediate intervention:\n\n{names}\n\n*Recommended Action:* Scheduled for mandatory faculty counseling & parent intimation."
                 else:
-                    response = "Great news! There are currently zero students flagged in Critical Risk (Q1)."
-                    
-            elif "top" in query_lower or "best" in query_lower or "performer" in query_lower:
+                    # Sort ascending by Academic Health Index (AHI) to return poorest performers
+                    bottom_df = student_matrix.sort_values('Academic Health Index (AHI)', ascending=True).head(5)
+                    bottom_list = "\n".join([
+                        f"{idx+1}. **{row['student_name']}** ({row['student_id']}) — Score: **{row['overall_mean_pct']:.1f}%**, Att: **{row['mean_attendance']:.1f}%**, AHI: **{row['Academic Health Index (AHI)']} / 100** [{row['Risk Quadrant']}]"
+                        for idx, (_, row) in enumerate(bottom_df.iterrows())
+                    ])
+                    response = f"Here are the **5 lowest performing students** (ranked by Academic Health Index):\n\n{bottom_list}\n\n*Recommended Action:* High dropout risk — issue formal academic intimation letters immediately."
+
+            # 2. TOP PERFORMERS INTENT
+            elif is_top_or_best:
                 top_df = student_matrix.sort_values('overall_mean_pct', ascending=False).head(5)
-                top_list = "\n".join([f"1. **{row['student_name']}** ({row['student_id']}) — Score: {row['overall_mean_pct']:.1f}%, SGPA: {row['est_sgpa']:.1f}" for _, row in top_df.iterrows()])
-                response = f"Here are the top 5 students by overall academic score:\n\n{top_list}"
-                
-            elif "hardest" in query_lower or "difficult" in query_lower or "subject" in query_lower:
+                top_list = "\n".join([
+                    f"{idx+1}. **{row['student_name']}** ({row['student_id']}) — Score: **{row['overall_mean_pct']:.1f}%**, SGPA: **{row['est_sgpa']:.1f}**"
+                    for idx, (_, row) in enumerate(top_df.iterrows())
+                ])
+                response = f"Here are the **top 5 high-performing students** by overall academic score:\n\n{top_list}"
+
+            # 3. SUBJECT DIFFICULTY INTENT
+            elif is_subject_query:
                 hardest = subject_summary.sort_values('Subject Difficulty Index (SDI)', ascending=False).iloc[0]
-                response = f"The hardest course is **{hardest['subject_id']}** with a Subject Difficulty Index (SDI) of **{hardest['Subject Difficulty Index (SDI)']:.1f}** and an average mark of **{hardest['subject_mean']:.1f}%**."
-                
-            elif "attendance" in query_lower or "low attendance" in query_lower:
+                response = f"The hardest course is **{hardest['subject_id']}** with a Subject Difficulty Index (SDI) of **{hardest['Subject Difficulty Index (SDI)']:.1f}** and an average class mark of **{hardest['subject_mean']:.1f}%**."
+
+            # 4. ATTENDANCE DISCIPLINE INTENT
+            elif is_attendance_query:
                 low_att = student_matrix[student_matrix['mean_attendance'] < att_threshold]
-                response = f"There are **{len(low_att)} students** below the mandatory attendance threshold of {att_threshold}%."
-                
+                response = f"There are **{len(low_att)} students** below the mandatory attendance threshold of **{att_threshold}%**."
+
+            # 5. GENERAL SUMMARY FALLBACK
             else:
                 batch_avg = clean_df['normalized_mark_pct'].mean()
                 batch_att = clean_df['attendance_percentage'].mean()
-                response = f"Cohort Summary: Overall Average Score is **{batch_avg:.1f}%** and Average Attendance is **{batch_att:.1f}%**. You can ask me to list at-risk students, top performers, or subject metrics!"
-                
+                response = f"Cohort Summary: Overall Average Score is **{batch_avg:.1f}%** and Average Attendance is **{batch_att:.1f}%**. Ask me to list 'critical risk students', 'poorest performers', 'top performers', or 'hardest subject'."
+
             st.session_state.messages.append({"role": "assistant", "content": response})
             st.chat_message("assistant").write(response)
 
