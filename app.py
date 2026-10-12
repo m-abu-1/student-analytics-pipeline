@@ -36,7 +36,6 @@ st.markdown("""
         -webkit-font-smoothing: antialiased;
     }
     
-    /* Anti-Clipping Viewport Padding (Prevents Streamlit Floating Header Overlap) */
     .block-container {
         padding-top: 3.8rem !important;
         padding-bottom: 2.0rem !important;
@@ -47,14 +46,12 @@ st.markdown("""
     
     [data-testid="stVerticalBlock"] { gap: 0.85rem !important; }
 
-    /* Streamlit Default Header Bar Transparency */
     header[data-testid="stHeader"] {
         background-color: rgba(248, 249, 250, 0.85) !important;
         backdrop-filter: blur(8px);
         z-index: 99 !important;
     }
 
-    /* Enterprise Header Banner */
     .workspace-navbar {
         width: 100%;
         box-sizing: border-box;
@@ -77,7 +74,6 @@ st.markdown("""
         letter-spacing: 0.05em;
     }
 
-    /* Google Material Workspace Navigation Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px !important;
         border-bottom: 2px solid #DADCE0 !important;
@@ -108,15 +104,6 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    /* Metric & Zoho Analytics Cards */
-    .zoho-card {
-        background: #FFFFFF; border: 1px solid #DADCE0; border-radius: 8px;
-        padding: 16px 20px; box-shadow: 0 1px 3px rgba(60,64,67,0.05); transition: all 0.2s;
-        box-sizing: border-box; width: 100%;
-    }
-    .zoho-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(60,64,67,0.12); border-color: #1A73E8; }
-
-    /* Custom Status Badges */
     .status-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
     .badge-critical { background: #FCE8E6; color: #C5221F; border: 1px solid #F5C2C7; }
     .badge-warning { background: #FEF7E0; color: #B06000; border: 1px solid #FBE3B5; }
@@ -192,14 +179,17 @@ with st.sidebar:
     
     att_threshold = st.slider(
         "Attendance Cutoff (%)", 50.0, 90.0, 75.0, 1.0,
+        key="sidebar_att_threshold",
         help="Mandatory university attendance threshold. Falling below triggers an Attendance Warning or Critical At-Risk flag."
     )
     z_risk_threshold = st.slider(
         "Critical Z-Score Cutoff (σ)", -2.0, 0.0, -0.5, 0.1,
+        key="sidebar_z_threshold",
         help="Standard deviation cutoff relative to subject average. Scores below signal relative academic underperformance."
     )
     est_tuition_fee = st.number_input(
         "Annual Tuition Fee (₹)", value=125000, step=5000,
+        key="sidebar_tuition_fee",
         help="Annual departmental tuition fee per student used to calculate total financial tuition revenue exposure."
     )
 
@@ -239,8 +229,8 @@ def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
             marks = float(row.get('marks_obtained', -1))
             max_m = float(row.get('maximum_marks', 100.0))
             
-            if att < 0.0 or att > 100.0: reasons.append(f"Invalid Attendance [{att}%]")
-            if marks < 0.0 or marks > max_m: reasons.append(f"Invalid Marks [{marks}/{max_m}]")
+            if pd.isna(att) or att < 0.0 or att > 100.0: reasons.append(f"Invalid Attendance [{att}%]")
+            if pd.isna(marks) or marks < 0.0 or marks > max_m: reasons.append(f"Invalid Marks [{marks}/{max_m}]")
                 
             if not reasons:
                 pct_score = (marks / max_m) * 100.0
@@ -250,7 +240,7 @@ def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
                     "attendance_percentage": att, "marks_obtained": marks,
                     "maximum_marks": max_m, "normalized_mark_pct": pct_score
                 })
-        except ValueError:
+        except (ValueError, TypeError):
             reasons.append("Non-numeric Data Type Failure")
             
         if reasons:
@@ -292,15 +282,16 @@ def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
     # Standardize Scores using Z-Score Baseline
     clean_df = clean_df.merge(subject_summary[['subject_id', 'subject_mean', 'subject_std']], on='subject_id', how='left')
     clean_df['z_score'] = (clean_df['normalized_mark_pct'] - clean_df['subject_mean']) / clean_df['subject_std']
+    clean_df['z_score'] = clean_df['z_score'].fillna(0.0)
 
     # Indian 10-Point Grade Point (SGPA Scale)
     def mark_to_gpa(pct):
-        if pct >= 90: return 10.0 # O Grade
-        elif pct >= 80: return 9.0  # A+ Grade
-        elif pct >= 70: return 8.0  # A Grade
-        elif pct >= 60: return 7.0  # B+ Grade
-        elif pct >= 50: return 6.0  # B Grade
-        return 0.0                  # Re-Approve (RA)
+        if pct >= 90: return 10.0
+        elif pct >= 80: return 9.0
+        elif pct >= 70: return 8.0
+        elif pct >= 60: return 7.0
+        elif pct >= 50: return 6.0
+        return 0.0
 
     clean_df['grade_point'] = clean_df['normalized_mark_pct'].apply(mark_to_gpa)
 
@@ -340,6 +331,7 @@ col_ingest, col_template = st.columns([3, 1], vertical_alignment="bottom")
 with col_ingest:
     uploaded_file = st.file_uploader(
         "Ingest Academic Data File (.csv or .xlsx)", type=["csv", "xlsx"],
+        key="main_data_file_uploader",
         help="Upload raw academic dataset containing student marks, attendance, and subject details."
     )
 
@@ -353,7 +345,7 @@ with col_template:
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
         template_data.to_excel(writer, index=False, sheet_name='Data_Contract')
-    st.download_button("Download Schema Contract (.xlsx)", data=buf.getvalue(), file_name="academic_schema_contract.xlsx", use_container_width=True)
+    st.download_button("Download Schema Contract (.xlsx)", data=buf.getvalue(), file_name="academic_schema_contract.xlsx", key="dl_contract_schema", use_container_width=True)
 
 clean_df, audit_df, subject_summary, student_matrix = None, None, None, None
 
@@ -367,30 +359,16 @@ if uploaded_file is not None:
         
     total_received = len(raw_df)
     clean_count = len(clean_df) if clean_df is not None else 0
-    flagged_count = len(audit_df)
+    flagged_count = len(audit_df) if audit_df is not None else 0
     health_score = round((clean_count / total_received) * 100, 2) if total_received > 0 else 0.0
 
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric(
-        "Records Ingested", total_received,
-        help="Total raw row count received from the uploaded dataset stream."
-    )
-    k2.metric(
-        "Clean Records Persisted", clean_count,
-        help="Validated, non-duplicate records successfully loaded into the statistical pipeline."
-    )
-    k3.metric(
-        "Anomalies Isolated", flagged_count, delta=f"{flagged_count} Rejections", delta_color="inverse",
-        help="Records rejected due to missing IDs, out-of-bounds percentages (>100% or <0%), or non-numeric types."
-    )
-    k4.metric(
-        "Data Health Score", f"{health_score}%",
-        delta="NAAC Ready" if health_score >= 90 else "Action Required",
-        delta_color="normal" if health_score >= 90 else "inverse",
-        help="Percentage of clean records over total received. NAAC/NBA criteria require a health score >= 90% for valid audit reporting."
-    )
+    k1.metric("Records Ingested", total_received, help="Total raw row count received from uploaded file.")
+    k2.metric("Clean Records Persisted", clean_count, help="Validated non-duplicate records in active processing pipeline.")
+    k3.metric("Anomalies Isolated", flagged_count, delta=f"{flagged_count} Rejections", delta_color="inverse", help="Records rejected due to missing fields or out-of-bounds values.")
+    k4.metric("Data Health Score", f"{health_score}%", delta="NAAC Ready" if health_score >= 90 else "Action Required", delta_color="normal" if health_score >= 90 else "inverse", help="Percentage of clean records. NAAC/NBA target >= 90%.")
     
-    if not audit_df.empty:
+    if audit_df is not None and not audit_df.empty:
         with st.expander("View Isolated Anomaly Audit Trail Log", expanded=False):
             st.dataframe(audit_df, use_container_width=True)
 
@@ -418,51 +396,75 @@ with tab1:
         pass_rate = ((student_matrix['overall_mean_pct'] >= 50.0).sum() / len(student_matrix)) * 100.0
         
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Cohort Mean Score Attainment", f"{batch_avg_mark:.2f}%", help="Mean percentage mark obtained across all subjects and students.")
-        m2.metric("Aggregate Attendance Baseline", f"{batch_avg_att:.1f}%", help="Mean lecture attendance percentage across the cohort.")
-        m3.metric("Academic Health Index (AHI)", f"{batch_ahi:.1f} / 100", help="Weighted index combining 60% academic performance and 40% attendance discipline.")
-        m4.metric("Outcome Attainment Benchmark (≥ 50%)", f"{pass_rate:.1f}%", help="Percentage of cohort maintaining an overall passing grade (>= 50%).")
+        m1.metric("Cohort Mean Score Attainment", f"{batch_avg_mark:.2f}%")
+        m2.metric("Aggregate Attendance Baseline", f"{batch_avg_att:.1f}%")
+        m3.metric("Academic Health Index (AHI)", f"{batch_ahi:.1f} / 100")
+        m4.metric("Outcome Attainment Benchmark (≥ 50%)", f"{pass_rate:.1f}%")
 
         col_viz, col_stats = st.columns([2.2, 1])
-        with col_viz:
-            x = clean_df['attendance_percentage'].values
-            y = clean_df['normalized_mark_pct'].values
-            
-            slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
-            r_squared = r_value ** 2
+        
+        # Robust Data Sanitization for Regression (Prevents NaN Outputs)
+        x_raw = clean_df['attendance_percentage'].to_numpy(dtype=float)
+        y_raw = clean_df['normalized_mark_pct'].to_numpy(dtype=float)
+        mask = np.isfinite(x_raw) & np.isfinite(y_raw)
+        x_clean, y_clean = x_raw[mask], y_raw[mask]
 
+        if len(x_clean) >= 2 and np.std(x_clean) > 0 and np.std(y_clean) > 0:
+            slope, intercept, r_value, p_value, std_err = stats.linregress(x_clean, y_clean)
+            r_squared = r_value ** 2
+            r_str = f"{r_value:+.4f}"
+            slope_str = f"{slope:+.4f}"
+            r2_str = f"{r_squared:.4f}"
+            p_str = f"{p_value:.2e}"
+            yield_10 = f"{slope * 10:+.1f}"
+            r2_pct = f"{r_squared * 100:.1f}%"
+        else:
+            slope, intercept, r_value, p_value = 0.0, 0.0, 0.0, 1.0
+            r_squared = 0.0
+            r_str = "0.0000"
+            slope_str = "0.0000"
+            r2_str = "0.0000"
+            p_str = "1.00e+00"
+            yield_10 = "0.0"
+            r2_pct = "0.0%"
+
+        with col_viz:
             fig_scatter = px.scatter(
                 clean_df, x="attendance_percentage", y="normalized_mark_pct", color="subject_id",
-                title=f"Attendance vs Performance Bivariate Scatter Plot (r = {r_value:+.3f}, p = {p_value:.2e})",
+                title=f"Attendance vs Performance Bivariate Scatter Plot (r = {r_str}, p = {p_str})",
                 labels={"attendance_percentage": "Attendance (%)", "normalized_mark_pct": "Score (%)"},
                 height=380
             )
-            if len(clean_df) > 1 and np.std(x) > 0:
-                x_range = np.linspace(x.min(), x.max(), 100)
-                fig_scatter.add_trace(go.Scatter(x=x_range, y=slope * x_range + intercept, mode='lines', name=f'OLS Trendline (R²={r_squared:.2f})', line=dict(color='#E11D48', dash='dash', width=2)))
+            if len(x_clean) >= 2 and np.std(x_clean) > 0:
+                x_range = np.linspace(x_clean.min(), x_clean.max(), 100)
+                fig_scatter.add_trace(go.Scatter(
+                    x=x_range, y=slope * x_range + intercept,
+                    mode='lines', name=f'OLS Trendline (R²={r2_str})',
+                    line=dict(color='#E11D48', dash='dash', width=2)
+                ))
             fig_scatter.update_layout(**PLOTLY_CONFIG)
-            st.plotly_chart(fig_scatter, use_container_width=True)
+            st.plotly_chart(fig_scatter, use_container_width=True, key="exec_scatter_plot")
 
         with col_stats:
             st.markdown("##### Statistical Parameters")
-            st.metric("Pearson Correlation (r)", f"{r_value:+.4f}", help="Linear relationship strength between attendance and marks (-1.0 to +1.0).")
-            st.metric("Marginal Performance Yield (m)", f"{slope:+.4f} marks / % att", help="Expected mark increase for every 1% increase in lecture attendance.")
-            st.metric("Attendance Determinacy (R²)", f"{r_squared:.4f}", help="Proportion of total score variance explained by attendance alone.")
+            st.metric("Pearson Correlation (r)", r_str, help="Linear relationship strength (-1.0 to +1.0).")
+            st.metric("Marginal Performance Yield (m)", f"{slope_str} marks / % att", help="Expected score change per 1% attendance shift.")
+            st.metric("Attendance Determinacy (R²)", r2_str, help="Variance in score explained by attendance alone.")
 
             with st.popover("Methodology & Business Context"):
                 st.markdown("""
                 **Institutional Context (NAAC Criterion 2.6):**
-                * **Pearson Correlation (r):** Quantifies whether classroom presence directly translates to academic success.
-                * **Slope (m):** Used by Deans to calculate grade improvement per attendance policy shift.
-                * **Explanatory Power (R²):** Demonstrates what percentage of academic variance is driven by attendance vs. external factors.
+                * **Pearson Correlation (r):** Quantifies whether classroom presence directly translates to academic performance.
+                * **Slope (m):** Estimates score change per attendance policy adjustment.
+                * **Explanatory Power (R²):** Percentage of mark variance driven by attendance discipline.
                 """)
 
         st.markdown(f"""
         <div class="insight-banner">
             <strong>Executive Decision Sensitivity Insight:</strong><br>
-            • <strong>Pearson Performance Sensitivity (r = {r_value:+.4f}, p = {p_value:.2e}):</strong> {"High positive relationship — lecture attendance directly impacts student exam performance." if r_value > 0.6 else "Moderate relationship — marks are partially independent of classroom presence." if r_value > 0.3 else "Low correlation — attendance has minimal linear impact on marks."}<br>
-            • <strong>Marginal Yield Per 10% Attendance Shift (Slope m = {slope:+.2f}):</strong> Every 10% increase in lecture attendance yields an expected <strong>+{slope*10:.1f} mark increase</strong> in final evaluation.<br>
-            • <strong>Attendance Determinacy Coefficient (R² = {r_squared:.2f}):</strong> Exactly {r_squared*100:.1f}% of overall evaluation score variance is driven by attendance discipline alone.
+            • <strong>Pearson Performance Sensitivity (r = {r_str}, p = {p_str}):</strong> {"High positive relationship — lecture attendance directly impacts student exam performance." if r_value > 0.6 else "Moderate relationship — marks are partially independent of classroom presence." if r_value > 0.3 else "Low correlation — attendance has minimal linear impact on marks."}<br>
+            • <strong>Marginal Yield Per 10% Attendance Shift (Slope m = {slope_str}):</strong> Every 10% increase in lecture attendance yields an expected <strong>{yield_10} mark increase</strong> in final evaluation.<br>
+            • <strong>Attendance Determinacy Coefficient (R² = {r2_str}):</strong> Exactly {r2_pct} of overall evaluation score variance is driven by attendance discipline alone.
         </div>
         """, unsafe_allow_html=True)
     else:
@@ -493,7 +495,7 @@ with tab2:
             )
             fig_box.add_hline(y=0, line_dash="dash", line_color="gray", annotation_text="Mean Baseline (Z = 0)")
             fig_box.update_layout(**PLOTLY_CONFIG)
-            st.plotly_chart(fig_box, use_container_width=True)
+            st.plotly_chart(fig_box, use_container_width=True, key="obe_box_plot")
             
         with col_s2:
             fig_sdi = px.bar(
@@ -503,7 +505,7 @@ with tab2:
                 height=380
             )
             fig_sdi.update_layout(**PLOTLY_CONFIG)
-            st.plotly_chart(fig_sdi, use_container_width=True)
+            st.plotly_chart(fig_sdi, use_container_width=True, key="obe_sdi_bar")
 
         hardest = subject_summary.sort_values('Subject Difficulty Index (SDI)', ascending=False).iloc[0]
         st.markdown(f"""
@@ -528,17 +530,17 @@ with tab3:
         avg_sgpa = student_matrix['est_sgpa'].mean()
 
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Total Enrolled Students", total_students, help="Count of unique student IDs in current batch.")
-        m2.metric("Critical Risk (Q1) Count", q1_students, delta=f"{q1_students} At-Risk", delta_color="inverse", help="Students failing both attendance and performance benchmarks.")
-        m3.metric("High Performers (Q4)", q4_students, delta=f"{q4_students} Honor Candidates", help="Students meeting or exceeding both attendance and performance benchmarks.")
-        m4.metric("Cohort Estimated SGPA", f"{avg_sgpa:.2f} / 10.0", help="Estimated Semester Grade Point Average based on Indian 10-point scale.")
+        m1.metric("Total Enrolled Students", total_students)
+        m2.metric("Critical Risk (Q1) Count", q1_students, delta=f"{q1_students} At-Risk", delta_color="inverse")
+        m3.metric("High Performers (Q4)", q4_students, delta=f"{q4_students} Honor Candidates")
+        m4.metric("Cohort Estimated SGPA", f"{avg_sgpa:.2f} / 10.0")
 
         st.markdown("---")
         search_col, filter_col = st.columns([2, 1])
         with search_col:
-            search_query = st.text_input("Search Student Name or ID:", "", help="Filter student profiles in real time.").lower()
+            search_query = st.text_input("Search Student Name or ID:", "", key="student_search_input").lower()
         with filter_col:
-            selected_quadrant = st.selectbox("Filter Risk Category:", ["ALL", "CRITICAL RISK (Q1)", "ATTENDANCE RISK (Q2)", "ACADEMIC RISK (Q3)", "HIGH PERFORMER (Q4)"])
+            selected_quadrant = st.selectbox("Filter Risk Category:", ["ALL", "CRITICAL RISK (Q1)", "ATTENDANCE RISK (Q2)", "ACADEMIC RISK (Q3)", "HIGH PERFORMER (Q4)"], key="student_risk_filter")
 
         filtered_students = student_matrix.copy()
         if search_query:
@@ -566,19 +568,33 @@ with tab3:
                     
                     st_records = clean_df[clean_df['student_id'] == stu['student_id']]
                     
-                    fig_radar = go.Figure()
-                    fig_radar.add_trace(go.Scatterpolar(
-                        r=st_records['normalized_mark_pct'].tolist() + [st_records['normalized_mark_pct'].iloc[0]],
-                        theta=st_records['subject_id'].tolist() + [st_records['subject_id'].iloc[0]],
-                        fill='toself', name='Student Score', line_color='#1A73E8'
-                    ))
-                    fig_radar.add_trace(go.Scatterpolar(
-                        r=st_records['subject_mean'].tolist() + [st_records['subject_mean'].iloc[0]],
-                        theta=st_records['subject_id'].tolist() + [st_records['subject_id'].iloc[0]],
-                        fill='toself', name='Subject Class Avg', line_color='#94A3B8', opacity=0.5
-                    ))
-                    fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=250, margin=dict(l=20, r=20, t=20, b=20))
-                    st.plotly_chart(fig_radar, use_container_width=True)
+                    if not st_records.empty:
+                        r_student = st_records['normalized_mark_pct'].tolist()
+                        r_student.append(r_student[0])
+                        r_class = st_records['subject_mean'].tolist()
+                        r_class.append(r_class[0])
+                        theta_subjects = st_records['subject_id'].tolist()
+                        theta_subjects.append(theta_subjects[0])
+
+                        fig_radar = go.Figure()
+                        fig_radar.add_trace(go.Scatterpolar(
+                            r=r_student, theta=theta_subjects,
+                            fill='toself', name='Student Score', line_color='#1A73E8'
+                        ))
+                        fig_radar.add_trace(go.Scatterpolar(
+                            r=r_class, theta=theta_subjects,
+                            fill='toself', name='Subject Class Avg', line_color='#94A3B8', opacity=0.5
+                        ))
+                        fig_radar.update_layout(
+                            polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+                            height=250, margin=dict(l=20, r=20, t=20, b=20)
+                        )
+                        # Explicit key parameter prevents StreamlitDuplicateElementId crash inside loop
+                        st.plotly_chart(
+                            fig_radar,
+                            use_container_width=True,
+                            key=f"radar_chart_{stu['student_id']}_{idx}"
+                        )
 
     else:
         st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
@@ -607,17 +623,17 @@ with tab4:
         fig_quad.add_vline(x=att_threshold, line_dash="dash", line_color="gray", annotation_text=f"Attendance Cutoff ({att_threshold}%)")
         fig_quad.add_hline(y=z_risk_threshold, line_dash="dash", line_color="gray", annotation_text=f"Z-Score Cutoff ({z_risk_threshold}σ)")
         fig_quad.update_layout(**PLOTLY_CONFIG)
-        st.plotly_chart(fig_quad, use_container_width=True)
+        st.plotly_chart(fig_quad, use_container_width=True, key="risk_matrix_scatter")
         
         q1_count = (student_matrix['Risk Quadrant'] == "CRITICAL RISK (Q1)").sum()
         revenue_at_risk = q1_count * est_tuition_fee
 
         st.markdown("##### Institutional Resource Allocation & Tuition Loss Counter")
         r1, r2, r3, r4 = st.columns(4)
-        r1.metric("Mandatory Counseling Slots", f"{q1_count} Sessions", help="Number of 1-on-1 counseling slots needed for Q1 students.")
-        r2.metric("Formal Intimation Notices", f"{(student_matrix['Risk Quadrant']=='ATTENDANCE RISK (Q2)').sum()} Notices", help="Official attendance warning notices to issue.")
-        r3.metric("Remedial Mentorship Assignments", f"{(student_matrix['Risk Quadrant']=='ACADEMIC RISK (Q3)').sum()} Allocations", help="Peer tutoring assignments required for academic risk students.")
-        r4.metric("Tuition Revenue Exposure", f"₹{revenue_at_risk:,.0f}", delta=f"{q1_count} Attrition Risk", delta_color="inverse", help="Total annual tuition revenue exposed to dropout risk.")
+        r1.metric("Mandatory Counseling Slots", f"{q1_count} Sessions")
+        r2.metric("Formal Intimation Notices", f"{(student_matrix['Risk Quadrant']=='ATTENDANCE RISK (Q2)').sum()} Notices")
+        r3.metric("Remedial Mentorship Assignments", f"{(student_matrix['Risk Quadrant']=='ACADEMIC RISK (Q3)').sum()} Allocations")
+        r4.metric("Tuition Revenue Exposure", f"₹{revenue_at_risk:,.0f}", delta=f"{q1_count} Attrition Risk", delta_color="inverse")
 
         st.dataframe(
             student_matrix[['student_id', 'student_name', 'department', 'mean_attendance', 'overall_mean_pct', 'est_sgpa', 'avg_z_score', 'Academic Health Index (AHI)', 'Risk Quadrant', 'Recommended Action']].style.format({
@@ -628,7 +644,13 @@ with tab4:
         )
         
         action_csv = student_matrix.to_csv(index=False).encode('utf-8')
-        st.download_button("Export Institutional Action Strategy Matrix (.csv)", data=action_csv, file_name=f"at_risk_action_matrix_{datetime.now().strftime('%Y%m%d')}.csv", use_container_width=True)
+        st.download_button(
+            "Export Institutional Action Strategy Matrix (.csv)",
+            data=action_csv,
+            file_name=f"at_risk_action_matrix_{datetime.now().strftime('%Y%m%d')}.csv",
+            key="dl_action_matrix_csv",
+            use_container_width=True
+        )
 
     else:
         st.markdown(EMPTY_BANNER_HTML, unsafe_allow_html=True)
@@ -649,7 +671,7 @@ with tab5:
         for msg in st.session_state.messages:
             st.chat_message(msg["role"]).write(msg["content"])
             
-        if prompt := st.chat_input("e.g. Who are the critical risk students? What is the hardest subject?"):
+        if prompt := st.chat_input("e.g. Who are the critical risk students? What is the hardest subject?", key="ai_chat_input_prompt"):
             st.session_state.messages.append({"role": "user", "content": prompt})
             st.chat_message("user").write(prompt)
             
