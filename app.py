@@ -25,7 +25,7 @@ if "raw_df" not in st.session_state:
 EMPTY_BANNER_HTML = """
 <div class="empty-banner">
     <div class="empty-banner-title">Awaiting Institutional Data Ingestion Stream</div>
-    <div class="empty-banner-sub">Please upload an academic batch dataset (.csv or .xlsx) or click <strong>'Load Demo Data'</strong> above to compute statistical models, outcome attainment matrices, and financial retention forecasts.</div>
+    <div class="empty-banner-sub">Please upload an academic batch dataset (.csv or .xlsx) or click <strong>'Load Demo Data'</strong> above to compute statistical models, NAAC/NBA outcome attainment matrices, and financial retention forecasts.</div>
 </div>
 """
 
@@ -120,6 +120,12 @@ st.markdown("""
         margin-top: 12px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(60,64,67,0.04);
     }
 
+    .accreditation-box {
+        background-color: #F8FAFC; border: 1px solid #CBD5E1; border-left: 5px solid #0EA5E9;
+        padding: 14px 18px; border-radius: 6px; font-size: 13px; color: #1E293B; line-height: 1.5;
+        margin-bottom: 14px;
+    }
+
     .empty-banner {
         background: #FFFFFF; border: 2px dashed #DADCE0; border-radius: 8px;
         padding: 44px; text-align: center; color: #5F6368; margin: 20px 0;
@@ -200,23 +206,25 @@ def generate_demo_dataset():
 # ---------------------------------------------------------
 with st.sidebar:
     st.image("https://img.icons8.com/color/96/000000/google-code.png", width=48)
-    st.markdown("### Governance Policy Cutoffs")
+    st.markdown("### Institutional Policy Cutoffs")
     
     att_threshold = st.slider(
         "Attendance Cutoff (%)", 50.0, 90.0, 75.0, 1.0,
         key="sidebar_att_threshold",
-        help="Mandatory university attendance threshold. Falling below triggers an Attendance Warning or Critical At-Risk flag."
+        help="Policy boundary: Attendance below this threshold flags a student for attendance warnings or critical risk."
     )
     z_risk_threshold = st.slider(
         "Critical Z-Score Cutoff (σ)", -2.0, 0.0, -0.5, 0.1,
         key="sidebar_z_threshold",
-        help="Standard deviation cutoff relative to subject average. Scores below signal relative academic underperformance."
+        help="Policy boundary: Z-score below this standard deviation flags relative academic underperformance."
     )
     est_tuition_fee = st.number_input(
         "Annual Tuition Fee (₹)", value=125000, step=5000,
         key="sidebar_tuition_fee",
-        help="Annual departmental tuition fee per student used to calculate total financial tuition revenue exposure."
+        help="Annual departmental tuition fee per student used to compute total financial retention risk."
     )
+    
+    st.info("💡 **Policy vs. Statistics Note:** Changing these sliders shifts administrative decision boundaries (Q1-Q4 student risk counts). It does NOT change the raw marks/attendance data, so Pearson correlation ($r$) and trendline slope ($m$) remain fixed for the uploaded batch.")
     
     if st.session_state["raw_df"] is not None:
         st.markdown("---")
@@ -225,7 +233,7 @@ with st.sidebar:
             st.rerun()
 
 # ---------------------------------------------------------
-# 4. STATISTICAL & CALCULATIVE PIPELINE (REAL-TIME REACTIVE)
+# 4. STATISTICAL & CALCULATIVE PIPELINE
 # ---------------------------------------------------------
 def run_analytics_pipeline(df_raw, att_thresh, z_thresh):
     df = normalize_columns(df_raw)
@@ -429,16 +437,25 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ---------------------------------------------------------
 with tab1:
     if clean_df is not None and not clean_df.empty:
+        st.markdown("""
+        <div class="accreditation-box">
+            <strong>🏛️ Accreditation Business Context (NAAC Criterion 2.6 - Student Performance & Learning Outcomes):</strong><br>
+            NAAC audit panels require statistical proof that teaching methodologies directly impact student learning outcomes. The metrics below convert raw attendance and exam marks into linear regression models ($r, m, R^2$) to prove classroom teaching effectiveness to auditors.
+        </div>
+        """, unsafe_allow_html=True)
+
         batch_avg_mark = clean_df['normalized_mark_pct'].mean()
         batch_avg_att = clean_df['attendance_percentage'].mean()
         batch_ahi = student_matrix['Academic Health Index (AHI)'].mean()
-        pass_rate = ((student_matrix['overall_mean_pct'] >= 50.0).sum() / len(student_matrix)) * 100.0
         
+        q1_count = (student_matrix['Risk Quadrant'] == "CRITICAL RISK (Q1)").sum()
+        revenue_at_risk = q1_count * est_tuition_fee
+
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Cohort Mean Score Attainment", f"{batch_avg_mark:.2f}%")
-        m2.metric("Aggregate Attendance Baseline", f"{batch_avg_att:.1f}%")
-        m3.metric("Academic Health Index (AHI)", f"{batch_ahi:.1f} / 100")
-        m4.metric("Outcome Attainment Benchmark (≥ 50%)", f"{pass_rate:.1f}%")
+        m1.metric("Cohort Mean Score", f"{batch_avg_mark:.2f}%")
+        m2.metric("Aggregate Attendance", f"{batch_avg_att:.1f}%")
+        m3.metric("Critical Risk (Q1) Students", f"{q1_count} Students", delta=f"Att < {att_threshold}% & Z < {z_risk_threshold}σ", delta_color="inverse")
+        m4.metric("Tuition Revenue Exposure", f"₹{revenue_at_risk:,.0f}", help=f"Calculated as {q1_count} Q1 students × ₹{est_tuition_fee:,.0f} Annual Tuition Fee. Adjusting sidebar sliders or tuition fees updates this value live.")
 
         col_viz, col_stats = st.columns([2.2, 1])
         
@@ -485,16 +502,15 @@ with tab1:
 
         with col_stats:
             st.markdown("##### Statistical Parameters")
-            st.metric("Pearson Correlation (r)", r_str)
-            st.metric("Marginal Performance Yield (m)", f"{slope_str} marks / % att")
-            st.metric("Attendance Determinacy (R²)", r2_str)
+            st.metric("Pearson Correlation (r)", r_str, help="Measures linear correlation across the raw dataset. Independent of sidebar threshold cutoffs.")
+            st.metric("Marginal Performance Yield (m)", f"{slope_str} marks / % att", help="Expected mark increase per 1% attendance gain across the cohort.")
+            st.metric("Attendance Determinacy (R²)", r2_str, help="Percentage of mark variation explained strictly by attendance discipline.")
 
             with st.popover("Methodology & Business Context"):
                 st.markdown("""
-                **Institutional Context (NAAC Criterion 2.6):**
-                * **Pearson Correlation (r):** Quantifies whether classroom presence directly translates to academic performance.
-                * **Slope (m):** Estimates score change per attendance policy adjustment.
-                * **Explanatory Power (R²):** Percentage of mark variance driven by attendance discipline.
+                **Why Correlation ($r$) Doesn't Change When Moving Cutoff Sliders:**
+                * **Intrinsic Property:** Pearson correlation ($r$) and OLS slope ($m$) are calculated directly from raw student marks and attendance percentages.
+                * **Policy Boundaries:** Moving sidebar sliders changes *administrative cutoff boundaries* (which students get categorized into Q1-Q4). It does NOT alter student marks or attendance data points, so $r$ and $m$ remain fixed for the uploaded batch.
                 """)
 
         st.markdown(f"""
@@ -502,7 +518,7 @@ with tab1:
             <strong>Executive Decision Sensitivity Insight:</strong><br>
             • <strong>Pearson Performance Sensitivity (r = {r_str}, p = {p_str}):</strong> {"High positive relationship — lecture attendance directly impacts student exam performance." if r_value > 0.6 else "Moderate relationship — marks are partially independent of classroom presence." if r_value > 0.3 else "Low correlation — attendance has minimal linear impact on marks."}<br>
             • <strong>Marginal Yield Per 10% Attendance Shift (Slope m = {slope_str}):</strong> Every 10% increase in lecture attendance yields an expected <strong>{yield_10} mark increase</strong> in final evaluation.<br>
-            • <strong>Attendance Determinacy Coefficient (R² = {r2_str}):</strong> Exactly {r2_pct} of overall evaluation score variance is driven by attendance discipline alone.
+            • <strong>Financial Risk Linkage:</strong> At the current tuition fee of <strong>₹{est_tuition_fee:,.0f}</strong>, the <strong>{q1_count} Q1 Critical Risk students</strong> represent <strong>₹{revenue_at_risk:,.0f}</strong> in annual institutional tuition revenue exposure.
         </div>
         """, unsafe_allow_html=True)
     else:
@@ -513,7 +529,12 @@ with tab1:
 # ---------------------------------------------------------
 with tab2:
     if clean_df is not None and not clean_df.empty:
-        st.markdown("##### Subject Difficulty Index (SDI) & NBA/NAAC Course Outcome (CO) Attainment")
+        st.markdown("""
+        <div class="accreditation-box">
+            <strong>🎯 Accreditation Business Context (NBA Outcome-Based Education - OBE Attainment):</strong><br>
+            The National Board of Accreditation (NBA) mandates that autonomous institutions evaluate Course Outcome (CO) attainment across 4 levels based on student pass rates ($\ge 50\%$). The <strong>Subject Difficulty Index (SDI = 100 - Mean)</strong> highlights strict subjects where extra Teaching Assistants (TAs) are required to safeguard departmental accreditation scores.
+        </div>
+        """, unsafe_allow_html=True)
         
         st.dataframe(
             subject_summary[['subject_id', 'student_count', 'subject_mean', 'subject_median', 'subject_std', 'Subject Difficulty Index (SDI)', 'Pass Rate (%)', 'OBE Target Attainment']].style.format({
@@ -569,7 +590,7 @@ with tab3:
 
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Total Enrolled Students", total_students)
-        m2.metric("Critical Risk (Q1) Count", q1_students, delta=f"{q1_students} At-Risk", delta_color="inverse")
+        m2.metric("Critical Risk (Q1) Count", q1_students, delta=f"Att < {att_threshold}% & Z < {z_risk_threshold}σ", delta_color="inverse")
         m3.metric("High Performers (Q4)", q4_students, delta=f"{q4_students} Honor Candidates")
         m4.metric("Cohort Estimated SGPA", f"{avg_sgpa:.2f} / 10.0")
 
@@ -589,7 +610,7 @@ with tab3:
         if selected_quadrant != "ALL":
             filtered_students = filtered_students[filtered_students['Risk Quadrant'] == selected_quadrant]
 
-        st.markdown(f"Displaying **{len(filtered_students)} of {total_students} Student Profiles** (Refreshed Live with Sidebar Cutoffs):")
+        st.markdown(f"Displaying **{len(filtered_students)} of {total_students} Student Profiles** (Refreshed Live with Policy Cutoffs: Attendance < {att_threshold}%, Z-Score < {z_risk_threshold}σ):")
         
         card_cols = st.columns(2)
         for idx, (_, stu) in enumerate(filtered_students.iterrows()):
@@ -641,6 +662,13 @@ with tab3:
 # ---------------------------------------------------------
 with tab4:
     if clean_df is not None and not clean_df.empty:
+        st.markdown(f"""
+        <div class="accreditation-box">
+            <strong>📊 Executive Business Context (Retention & Financial Loss Prevention):</strong><br>
+            Moving the sidebar sliders instantly moves the vertical cutoff line (<strong>Attendance = {att_threshold}%</strong>) and horizontal line (<strong>Z-Score = {z_risk_threshold:.2f}σ</strong>) on the plot below. Every student in Q1 represents a potential dropout. Multiplying Q1 count by the <strong>Annual Tuition Fee (₹{est_tuition_fee:,.0f})</strong> calculates total revenue exposure to justify retention programs.
+        </div>
+        """, unsafe_allow_html=True)
+
         def get_action(quadrant):
             if quadrant == "CRITICAL RISK (Q1)": return "Schedule Mandatory Faculty Counseling & Notify Parents"
             elif quadrant == "ATTENDANCE RISK (Q2)": return "Issue Official Low Attendance Warning Letter"
@@ -670,7 +698,7 @@ with tab4:
         r1.metric("Mandatory Counseling Slots", f"{q1_count} Sessions")
         r2.metric("Formal Intimation Notices", f"{(student_matrix['Risk Quadrant']=='ATTENDANCE RISK (Q2)').sum()} Notices")
         r3.metric("Remedial Mentorship Assignments", f"{(student_matrix['Risk Quadrant']=='ACADEMIC RISK (Q3)').sum()} Allocations")
-        r4.metric("Tuition Revenue Exposure", f"₹{revenue_at_risk:,.0f}", delta=f"{q1_count} Attrition Risk", delta_color="inverse")
+        r4.metric("Tuition Revenue Exposure", f"₹{revenue_at_risk:,.0f}", delta=f"{q1_count} Q1 Dropouts × ₹{est_tuition_fee:,.0f}", delta_color="inverse")
 
         st.dataframe(
             student_matrix[['student_id', 'student_name', 'department', 'mean_attendance', 'overall_mean_pct', 'est_sgpa', 'avg_z_score', 'Academic Health Index (AHI)', 'Risk Quadrant', 'Recommended Action']].style.format({
@@ -731,7 +759,7 @@ with tab5:
                 
                 if not crit_df.empty and ("q1" in q_lower or "critical" in q_lower or "counseling" in q_lower):
                     names = ", ".join([f"**{row['student_name']}** ({row['student_id']})" for _, row in crit_df.iterrows()])
-                    response = f"There are **{len(crit_df)} students** in **Critical Risk (Q1)** requiring immediate intervention:\n\n{names}\n\n*Recommended Action:* Scheduled for mandatory faculty counseling & parent intimation."
+                    response = f"There are **{len(crit_df)} students** in **Critical Risk (Q1)** (Attendance < {att_threshold}% & Z-Score < {z_risk_threshold:.2f}σ):\n\n{names}\n\n*Financial Attrition Exposure:* **₹{len(crit_df) * est_tuition_fee:,.0f}**.\n\n*Recommended Action:* Scheduled for mandatory faculty counseling & parent intimation."
                 else:
                     bottom_df = student_matrix.sort_values('Academic Health Index (AHI)', ascending=True).head(5)
                     bottom_list = "\n".join([
@@ -750,7 +778,7 @@ with tab5:
 
             elif is_subject_query:
                 hardest = subject_summary.sort_values('Subject Difficulty Index (SDI)', ascending=False).iloc[0]
-                response = f"The hardest course is **{hardest['subject_id']}** with a Subject Difficulty Index (SDI) of **{hardest['Subject Difficulty Index (SDI)']:.1f}** and an average class mark of **{hardest['subject_mean']:.1f}%**."
+                response = f"The hardest course is **{hardest['subject_id']}** with a Subject Difficulty Index (SDI) of **{hardest['Subject Difficulty Index (SDI)']:.1f}** and an average class mark of **{hardest['subject_mean']:.1f}%** (NBA CO Attainment Level: {hardest['OBE Target Attainment']})."
 
             elif is_attendance_query:
                 low_att = student_matrix[student_matrix['mean_attendance'] < att_threshold]
@@ -759,7 +787,7 @@ with tab5:
             else:
                 batch_avg = clean_df['normalized_mark_pct'].mean()
                 batch_att = clean_df['attendance_percentage'].mean()
-                response = f"Cohort Summary: Overall Average Score is **{batch_avg:.1f}%** and Average Attendance is **{batch_att:.1f}%**. Ask me to list 'critical risk students', 'poorest performers', 'top performers', or 'hardest subject'."
+                response = f"Cohort Summary: Overall Average Score is **{batch_avg:.1f}%** and Average Attendance is **{batch_att:.1f}%**. Ask me about NAAC compliance, NBA course attainment, critical risk students, or tuition revenue exposure."
 
             st.session_state.messages.append({"role": "assistant", "content": response})
             st.chat_message("assistant").write(response)
